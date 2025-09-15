@@ -839,7 +839,47 @@
                 URL.revokeObjectURL(url);
             }
 
-            async uploadToEbay() { /* Placeholder for eBay upload logic */ }
+            async uploadToEbay() {
+                if (this.isProcessing || !this.processedData.length) return;
+                this.isProcessing = true;
+                this.uploadEbayBtn.textContent = 'Uploading...';
+                this.updateControlPanel();
+                this.dataDisplay.innerHTML = `<div class="processing-indicator"><div class="neural-spinner"></div><span>1/3: Uploading images to eBay...</span></div>`;
+
+                try {
+                    // Step 1: Upload images to eBay EPS
+                    const imageFormData = new FormData();
+                    this.uploadedFiles.forEach(file => {
+                        imageFormData.append('images', file);
+                    });
+                    const imageUploadResult = await this._callApi('/api/ebay/upload-images', { body: imageFormData, isForm: true });
+
+                    // Step 2: Prepare listings with EPS URLs
+                    this.dataDisplay.innerHTML = `<div class="processing-indicator"><div class="neural-spinner"></div><span>2/3: Creating listings...</span></div>`;
+                    const listingsPayload = this.processedData.map((item, index) => {
+                        // A simple way to generate a unique SKU
+                        const sku = item.sku || `NLE-${Date.now()}-${index}`;
+                        return {
+                            ...item,
+                            sku: sku,
+                            price: item.price || '0.00', // Ensure price is set
+                            imageUrls: imageUploadResult.uploaded.map(img => img.epsImageUrl)
+                        };
+                    });
+
+                    // Step 3: Bulk upload to eBay
+                    this.dataDisplay.innerHTML = `<div class="processing-indicator"><div class="neural-spinner"></div><span>3/3: Publishing to eBay...</span></div>`;
+                    const bulkUploadResult = await this._callApi('/api/bulk-upload-ebay', { body: JSON.stringify({ listings: listingsPayload }) });
+
+                    this.dataDisplay.innerHTML = `<pre>eBay Upload Complete!\n\n${JSON.stringify(bulkUploadResult, null, 2)}</pre>`;
+                } catch (error) {
+                    this.dataDisplay.innerHTML = `<pre style="color: #ff4040;">eBay Upload Error: ${error.message}</pre>`;
+                } finally {
+                    this.isProcessing = false;
+                    this.uploadEbayBtn.textContent = 'Upload to eBay';
+                    this.updateControlPanel();
+                }
+            }
         }
         
         // Initialize the Neural Listing Engine
