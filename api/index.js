@@ -40,8 +40,9 @@ async function getEbayAccessToken() {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Authorization': `Basic ${credentials}`
-            }
-        }, { timeout: 10000 }); // 10-second timeout
+            },
+            timeout: 10000 // 10-second timeout
+        });
         return response.data.access_token;
     } catch (error) {
         console.error('Error refreshing eBay token:', error.response ? error.response.data : error.message);
@@ -93,8 +94,7 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res) => {
                     `${EBAY_BASE}/commerce/taxonomy/v1/category_tree/0/get_category_suggestions?q=${query}`, {
                         headers: { Authorization: `Bearer ${token}` },
                         timeout: 10000 // 10-second timeout
-                    },
-                );
+                    });
                 const suggestion = categoryResponse.data.categorySuggestions?.[0]?.category;
                 if (suggestion) {
                     categoryInfo = { categoryId: suggestion.categoryId, categoryName: suggestion.categoryName };
