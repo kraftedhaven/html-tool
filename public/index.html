@@ -749,7 +749,7 @@
             }
 
             async executeAnalysis() {
-                if (this.isProcessing) return;
+                if (this.isProcessing || this.uploadedFiles.length === 0) return;
                 this.isProcessing = true;
                 this.analyzeBtn.textContent = 'Processing...';
                 this.updateControlPanel();
@@ -767,28 +767,50 @@
                 });
 
                 try {
+                     // 1) send images to the server
                     const formData = new FormData();
-                    this.uploadedFiles.forEach(file => {
-                        formData.append('images', file);
+                    this.uploadedFiles.forEach(file => formData.append('images', file));
+                    
+                    const res = await fetch('/api/analyze-images', {
+                        method: 'POST',
+                        headers: { /* 'x-app-key': 'YOUR_APP_KEY' */ },
+                        body: formData
                     });
-
-                    const result = await this._callApi('/api/analyze-images', { body: formData, isForm: true });
-                    this.processedData = result.data;
-
-                    statusElements.forEach(el => {
-                        el.className = 'neural-status status-complete';
-                        el.textContent = 'Complete';
+                    if (!res.ok) throw new Error(await res.text());
+                    const { data } = await res.json();
+                    
+                    // 2) store results and update UI
+                    this.processedData = (data || []).map((item, i) => ({
+                        filename: this.uploadedFiles[i]?.name || 'N/A',
+                        title: item.title || '',
+                        description: item.keyFeatures ? String(item.keyFeatures) : '',
+                        size: item.size || '',
+                        color: typeof item.color === 'object' && item.color ? [item.color.primary, item.color.secondary].filter(Boolean).join(', ') : item.color || '',
+                        brand: item.brand || '',
+                        condition: item.condition || '',
+                        category: item.categoryName || '',
+                        categoryId: item.categoryId || '',
+                        price: item.price || '',
+                        countryOfManufacture: item.countryOfManufacture || '',
+                        yearManufactured: item.estimatedYear || '',
+                        isVintage: item.estimatedYear ? (Number(item.estimatedYear) < 2005 ? 'Yes' : 'No') : '',
+                        confidence: item.confidence || 0
+                    }));
+                    
+                    // set tile statuses to complete
+                    statusElements.forEach((el, i) => {
+                        if (i < this.processedData.length) {
+                            el.className = 'neural-status status-complete';
+                            el.textContent = 'Complete';
+                        }
                     });
-
+                    
+                    // 3) update metrics + CSV preview
                     this.updateMetrics();
                     this.generateDataOutput();
 
                 } catch (error) {
-                    this.dataDisplay.innerHTML = `<pre style="color: #ff4040;">Error: ${error.message}</pre>`;
-                    statusElements.forEach(el => {
-                        el.className = 'neural-status status-idle';
-                        el.textContent = 'Error';
-                    });
+                    this.showError('Analysis failed: ' + error.message);
                 } finally {
                     this.isProcessing = false;
                     this.analyzeBtn.textContent = 'Execute Analysis';
@@ -837,6 +859,15 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+            }
+
+            showError(message) {
+                this.dataDisplay.innerHTML = `<pre style="color: #ff4040;">${message}</pre>`;
+                const statusElements = document.querySelectorAll('.neural-status');
+                statusElements.forEach(el => {
+                    el.className = 'neural-status status-idle';
+                    el.textContent = 'Error';
+                });
             }
 
             async uploadToEbay() {
