@@ -26,12 +26,24 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// --- In-memory cache for eBay token ---
+let ebayTokenCache = {
+    token: null,
+    expiresAt: 0,
+};
+
 // --- Helper Functions ---
 async function getEbayAccessToken() {
+    // Return cached token if it's still valid
+    if (ebayTokenCache.token && Date.now() < ebayTokenCache.expiresAt) {
+        return ebayTokenCache.token;
+    }
+
     const { EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN } = process.env;
     const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
 
     try {
+        console.log('Refreshing eBay access token...');
         const response = await axios.post(EBAY_OAUTH_TOKEN_URL, new URLSearchParams({
             grant_type: 'refresh_token',
             refresh_token: EBAY_REFRESH_TOKEN,
@@ -43,7 +55,15 @@ async function getEbayAccessToken() {
             },
             timeout: 10000 // 10-second timeout
         });
-        return response.data.access_token;
+
+        const { access_token, expires_in } = response.data;
+
+        // Set the expiration time to be 5 minutes before the actual expiration
+        const buffer = 5 * 60 * 1000; // 5 minutes in milliseconds
+        ebayTokenCache.token = access_token;
+        ebayTokenCache.expiresAt = Date.now() + (expires_in * 1000) - buffer;
+
+        return access_token;
     } catch (error) {
         console.error('Error refreshing eBay token:', error.response ? error.response.data : error.message);
         throw new Error('Could not refresh eBay access token.');
