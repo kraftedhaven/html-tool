@@ -819,9 +819,17 @@
             }
 
             updateMetrics() {
-                document.getElementById('totalUnits').textContent = String(this.processedData.length).padStart(2, '0');
-                // Confidence metrics are removed as the new backend doesn't provide a simple confidence score.
-                document.getElementById('avgConfidence').textContent = '--%';
+                const totalUnits = this.processedData.length;
+                document.getElementById('totalUnits').textContent = String(totalUnits).padStart(2, '0');
+
+                if (totalUnits > 0) {
+                    const totalConfidence = this.processedData.reduce((sum, item) => sum + (item.confidence || 0), 0);
+                    const avgConfidence = Math.round((totalConfidence / totalUnits) * 100);
+                    document.getElementById('avgConfidence').textContent = `${avgConfidence}%`;
+                } else {
+                    document.getElementById('avgConfidence').textContent = '0%';
+                }
+                // Accuracy is subjective and not provided by the API, so it remains a placeholder.
                 document.getElementById('accuracyRate').textContent = '--%';
             }
 
