@@ -1,16 +1,16 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const OpenAI = require('openai');
-const axios = require('axios');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { OpenAI } from 'openai';
+import axios from 'axios';
+import { Multer } from 'multer';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
 const app = express();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }); // No change needed here
 
 // eBay API Configuration
 const EBAY_ENV = process.env.EBAY_ENV || 'production';
@@ -23,7 +23,7 @@ const uploadDir = '/tmp/uploads';
 if (!fs.existsSync(uploadDir)){
     fs.mkdirSync(uploadDir, { recursive: true });
 }
-const upload = multer({ dest: uploadDir });
+const upload = new Multer({ dest: uploadDir });
 
 // Middleware
 app.use(cors());
@@ -270,4 +270,4 @@ app.post('/api/ebay/str', async (req, res) => {
 });
 
 // Export the app for Vercel
-module.exports = app;
+export default app;
