@@ -553,14 +553,10 @@
                 <h2 class="terminal-title">Sold-Through Insights</h2>
             </div>
             <div class="control-panel" style="margin-bottom: 0; gap: 12px;">
-                <input id="strQuery" type="text" placeholder="Keyword (e.g., 'Carhartt tee')" style="flex:1;min-width:220px">
-                <input id="strCat" type="text" placeholder="CategoryId (optional)" style="width:180px">
-                <button class="neural-btn btn-secondary" id="strIngestActiveBtn">Load Active CSV</button>
-                <button class="neural-btn btn-secondary" id="strIngestSoldBtn">Load Sold CSV</button>
+                <input id="strQuery" type="text" placeholder="Enter search keyword (e.g., 'Carhartt tee')" style="flex:1;min-width:220px">
+                <input id="strCat" type="text" placeholder="Category ID (optional)" style="width:180px">
                 <button class="neural-btn btn-primary" id="strCalcBtn">Calculate STR</button>
             </div>
-            <input id="strFileActive" type="file" accept=".csv,.json" style="display:none">
-            <input id="strFileSold" type="file" accept=".csv,.json" style="display:none">
         </div>
         
         <div class="output-terminal hidden" id="outputTerminal">
@@ -625,10 +621,6 @@
 
                 // STR
                 this.strPanel = document.getElementById('strPanel');
-                this.strIngestActiveBtn = document.getElementById('strIngestActiveBtn');
-                this.strIngestSoldBtn = document.getElementById('strIngestSoldBtn');
-                this.strFileActive = document.getElementById('strFileActive');
-                this.strFileSold = document.getElementById('strFileSold');
                 this.strCalcBtn = document.getElementById('strCalcBtn');
                 this.strQuery = document.getElementById('strQuery');
                 this.strCat = document.getElementById('strCat');
@@ -647,6 +639,16 @@
                 this.clearBtn.addEventListener('click', () => this.resetSystem());
                 this.downloadBtn.addEventListener('click', () => this.exportCsv());
                 this.uploadEbayBtn.addEventListener('click', () => this.uploadToEbay());
+
+                // Nifty Events (assuming they are implemented elsewhere or will be)
+                this.niftyIngestBtn.addEventListener('click', () => this.niftyFile.click());
+                this.niftyEnrichBtn.addEventListener('click', () => { /* Placeholder */ });
+
+                // STR Events
+                this.strCalcBtn.addEventListener('click', () => this.calculateStr());
+                this.strQuery.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') this.calculateStr();
+                });
             }
 
             handleDragOver(e) {
@@ -782,16 +784,19 @@
                     // 2) store results and update UI
                     this.processedData = (data || []).map((item, i) => ({
                         filename: this.uploadedFiles[i]?.name || 'N/A',
-                        title: item.title || '',
+                        title: item.seoTitle || item.title || '',
                         description: item.keyFeatures ? String(item.keyFeatures) : '',
                         size: item.size || '',
                         color: typeof item.color === 'object' && item.color ? [item.color.primary, item.color.secondary].filter(Boolean).join(', ') : item.color || '',
                         brand: item.brand || '',
                         condition: item.condition || '',
+                        price: item.suggestedPrice || '',
                         category: item.categoryName || '',
                         categoryId: item.categoryId || '',
-                        price: item.price || '',
                         countryOfManufacture: item.countryOfManufacture || '',
+                        material: item.material || '',
+                        fabricType: item.fabricType || '',
+                        theme: item.theme || '',
                         yearManufactured: item.estimatedYear || '',
                         isVintage: item.estimatedYear ? (Number(item.estimatedYear) < 2005 ? 'Yes' : 'No') : '',
                         confidence: item.confidence || 0
@@ -815,6 +820,34 @@
                     this.isProcessing = false;
                     this.analyzeBtn.textContent = 'Execute Analysis';
                     this.updateControlPanel();
+                }
+            }
+
+            async calculateStr() {
+                const query = this.strQuery.value;
+                const categoryId = this.strCat.value;
+                if (!query) {
+                    this.showError('Please enter a keyword to calculate Sold-Through Rate.');
+                    return;
+                }
+
+                this.dataDisplay.innerHTML = `
+                    <div class="processing-indicator">
+                        <div class="neural-spinner"></div>
+                        <span>Querying eBay for live market data...</span>
+                    </div>`;
+                this.outputTerminal.classList.remove('hidden');
+
+                try {
+                    const result = await this._callApi('/api/ebay/str', { body: JSON.stringify({ query, categoryId }) });
+                    this.dataDisplay.innerHTML = `
+                        <div style="text-align:center; padding: 20px; color: #e0e0e0;">
+                            <h3 style="color:#fff; margin-bottom: 20px;">Live STR for "${query}"</h3>
+                            <p>Active Listings: ${result.activeCount}</p><p>Sold Listings: ${result.soldCount}</p>
+                            <p style="font-size: 1.5rem; color: #40ff40; margin-top: 10px;">STR: ${result.str}%</p>
+                        </div>`;
+                } catch (error) {
+                    this.showError(`STR Calculation Failed: ${error.message}`);
                 }
             }
 

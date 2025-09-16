@@ -16,6 +16,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const EBAY_ENV = process.env.EBAY_ENV || 'production';
 const EBAY_BASE = EBAY_ENV === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
 const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
+const EBAY_FINDING_API_URL = `https://svcs.ebay.com/services/search/FindingService/v1`;
 
 // Multer setup for file uploads in a serverless environment
 const uploadDir = '/tmp/uploads';
@@ -75,7 +76,7 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res) => {
                     role: 'user',
                     content: [{
                         type: 'text',
-                        text: `Analyze the product in the image. Identify its title, brand, product type, size, primary and secondary colors, condition, key features (as a string), estimated manufacture year, country of manufacture, and any text on labels. Return ONLY a valid JSON object with the following schema: {"title": string, "brand": string, "productType": string, "size": string, "color": {"primary": string, "secondary": string}, "condition": string, "keyFeatures": string, "estimatedYear": number | "", "countryOfManufacture": string, "labels": string[], "confidence": number}`
+                        text: `Analyze the product in the image for an e-commerce listing. Generate a compelling SEO-friendly title. Identify brand, product type, size, colors, condition, key features, estimated manufacture year, country of manufacture, material, fabric type, and theme. Suggest a market price based on the item's attributes. Return ONLY a valid JSON object with this schema: {"seoTitle": string, "brand": string, "productType": string, "size": string, "color": {"primary": string, "secondary": string}, "condition": string, "keyFeatures": string, "estimatedYear": number | "", "countryOfManufacture": string, "material": string, "fabricType": string, "theme": string, "suggestedPrice": number, "confidence": number}`
                     }, {
                         type: 'image_url',
                         image_url: { url: dataUrl, detail: 'low' }
@@ -221,6 +222,50 @@ app.post('/api/bulk-upload-ebay', async (req, res) => {
     } catch (error) {
         console.error('eBay Bulk Upload Error:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
         res.status(500).json({ error: 'Failed during eBay bulk upload process.', details: error.response?.data });
+    }
+});
+
+// Calculate Sold-Through Rate from eBay
+app.post('/api/ebay/str', async (req, res) => {
+    const { query, categoryId } = req.body;
+    if (!query) {
+        return res.status(400).json({ error: 'A search query is required.' });
+    }
+
+    const params = new URLSearchParams({
+        'OPERATION-NAME': 'findCompletedItems',
+        'SERVICE-VERSION': '1.13.0',
+        'SECURITY-APPNAME': process.env.EBAY_CLIENT_ID,
+        'RESPONSE-DATA-FORMAT': 'JSON',
+        'REST-PAYLOAD': true,
+        'keywords': query,
+        'itemFilter(0).name': 'SoldItemsOnly',
+        'itemFilter(0).value': 'true',
+        'paginationInput.entriesPerPage': '1'
+    });
+    if (categoryId) params.append('categoryId', categoryId);
+
+    const activeParams = new URLSearchParams(params);
+    activeParams.set('OPERATION-NAME', 'findItemsAdvanced');
+    activeParams.delete('itemFilter(0).name');
+    activeParams.delete('itemFilter(0).value');
+
+    try {
+        const [soldResponse, activeResponse] = await Promise.all([
+            axios.get(`${EBAY_FINDING_API_URL}?${params.toString()}`),
+            axios.get(`${EBAY_FINDING_API_URL}?${activeParams.toString()}`)
+        ]);
+
+        const soldCount = soldResponse.data.findCompletedItemsResponse[0].paginationOutput[0].totalEntries[0] || '0';
+        const activeCount = activeResponse.data.findItemsAdvancedResponse[0].paginationOutput[0].totalEntries[0] || '0';
+        
+        const total = parseInt(soldCount) + parseInt(activeCount);
+        const str = total > 0 ? (parseInt(soldCount) / total) * 100 : 0;
+
+        res.json({ success: true, soldCount, activeCount, str: str.toFixed(2) });
+    } catch (error) {
+        console.error('eBay STR Error:', error.response ? error.response.data : error.message);
+        res.status(500).json({ error: 'Failed to calculate STR from eBay.' });
     }
 });
 
