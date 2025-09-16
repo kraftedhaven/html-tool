@@ -41,7 +41,7 @@ async function getEbayAccessToken() {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Authorization': `Basic ${credentials}`
             }
-        });
+        }, { timeout: 10000 }); // 10-second timeout
         return response.data.access_token;
     } catch (error) {
         console.error('Error refreshing eBay token:', error.response ? error.response.data : error.message);
@@ -91,8 +91,9 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res) => {
                 const query = encodeURIComponent(parsedJson.productType || parsedJson.title || 'item');
                 const categoryResponse = await axios.get(
                     `${EBAY_BASE}/commerce/taxonomy/v1/category_tree/0/get_category_suggestions?q=${query}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
+                        headers: { Authorization: `Bearer ${token}` },
+                        timeout: 10000 // 10-second timeout
+                    },
                 );
                 const suggestion = categoryResponse.data.categorySuggestions?.[0]?.category;
                 if (suggestion) {
@@ -242,8 +243,8 @@ app.post('/api/ebay/str', async (req, res) => {
 
     try {
         const [soldResponse, activeResponse] = await Promise.all([
-            axios.get(`${EBAY_FINDING_API_URL}?${params.toString()}`),
-            axios.get(`${EBAY_FINDING_API_URL}?${activeParams.toString()}`)
+            axios.get(`${EBAY_FINDING_API_URL}?${params.toString()}`, { timeout: 15000 }),
+            axios.get(`${EBAY_FINDING_API_URL}?${activeParams.toString()}`, { timeout: 15000 })
         ]);
 
         const soldCount = soldResponse.data.findCompletedItemsResponse[0].paginationOutput[0].totalEntries[0] || '0';

@@ -737,17 +737,30 @@
                     headers['Content-Type'] = 'application/json';
                 }
 
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers,
-                    body,
-                });
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 58000); // 58-second timeout, just under the server's 60s
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || `API Error: ${response.statusText}`);
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers,
+                        body,
+                        signal: controller.signal
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || `API Error: ${response.statusText}`);
+                    }
+                    return response.json();
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        throw new Error('Request timed out. The server may be busy or the analysis is taking too long. Check the Vercel logs for more details.');
+                    }
+                    throw error; // Re-throw other errors
+                } finally {
+                    clearTimeout(timeoutId);
                 }
-                return response.json();
             }
 
             async executeAnalysis() {
