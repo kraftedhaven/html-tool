@@ -19,11 +19,7 @@ const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
 const EBAY_FINDING_API_URL = `https://svcs.ebay.com/services/search/FindingService/v1`;
 
 // Multer setup for file uploads in a serverless environment
-const uploadDir = '/tmp/uploads';
-if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-const upload = new Multer({ dest: uploadDir });
+const upload = new Multer({ storage: Multer.memoryStorage() });
 
 // Middleware
 app.use(cors());
@@ -63,7 +59,7 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res) => {
 
     try {
         const analysisPromises = req.files.map(async (file) => {
-            const imageAsBase64 = fs.readFileSync(file.path, 'base64');
+            const imageAsBase64 = file.buffer.toString('base64');
             const dataUrl = `data:${file.mimetype};base64,${imageAsBase64}`;
 
             const completion = await openai.chat.completions.create({
@@ -106,9 +102,6 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res) => {
                 console.error("Could not fetch eBay category:", catError.message);
             }
 
-            // Clean up uploaded file
-            fs.unlinkSync(file.path);
-
             return { ...parsedJson, ...categoryInfo };
         });
 
@@ -117,8 +110,6 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res) => {
 
     } catch (error) {
         console.error('Error in /api/analyze-images:', error);
-        // Clean up any remaining files on error
-        req.files.forEach(file => fs.unlinkSync(file.path));
         res.status(500).json({ error: error.message });
     }
 });
@@ -132,7 +123,7 @@ app.post('/api/ebay/upload-images', upload.array('images'), async (req, res) => 
     try {
         const token = await getEbayAccessToken();
         const uploadPromises = req.files.map(async (file) => {
-            const fileBuffer = fs.readFileSync(file.path);
+            const fileBuffer = file.buffer;
             const boundary = `----WebKitFormBoundary${Math.random().toString(16).substr(2)}`;
             
             const postData = [
@@ -151,7 +142,6 @@ app.post('/api/ebay/upload-images', upload.array('images'), async (req, res) => 
                     'Content-Type': `multipart/form-data; boundary=${boundary}`
                  }
             });
-            fs.unlinkSync(file.path); // Clean up
             // The new image URL is in the Location header
             const imageUrl = response.headers.location;
             if (imageUrl) {

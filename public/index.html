@@ -772,14 +772,7 @@
                      // 1) send images to the server
                     const formData = new FormData();
                     this.uploadedFiles.forEach(file => formData.append('images', file));
-                    
-                    const res = await fetch('/api/analyze-images', {
-                        method: 'POST',
-                        headers: { /* 'x-app-key': 'YOUR_APP_KEY' */ },
-                        body: formData
-                    });
-                    if (!res.ok) throw new Error(await res.text());
-                    const { data } = await res.json();
+                    const { data } = await this._callApi('/api/analyze-images', { body: formData, isForm: true });
                     
                     // 2) store results and update UI
                     this.processedData = (data || []).map((item, i) => ({
