@@ -19,7 +19,10 @@ const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
 const EBAY_FINDING_API_URL = `https://svcs.ebay.com/services/search/FindingService/v1`;
 
 // Multer setup for file uploads in a serverless environment
-const upload = new Multer({ storage: Multer.memoryStorage() });
+const upload = new Multer({
+    storage: Multer.memoryStorage(),
+    limits: { fileSize: 4 * 1024 * 1024 }, // 4 MB limit per file
+});
 
 // Middleware
 app.use(cors());
@@ -44,17 +47,20 @@ async function getEbayAccessToken() {
 
     try {
         console.log('Refreshing eBay access token...');
-        const response = await axios.post(EBAY_OAUTH_TOKEN_URL, new URLSearchParams({
+        const data = new URLSearchParams({
             grant_type: 'refresh_token',
             refresh_token: EBAY_REFRESH_TOKEN,
             scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account https://api.ebay.com/oauth/api_scope/commerce.taxonomy.readonly'
-        }), {
+        });
+        const config = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Authorization': `Basic ${credentials}`
             },
             timeout: 10000 // 10-second timeout
-        });
+        };
+
+        const response = await axios.post(EBAY_OAUTH_TOKEN_URL, data, config);
 
         const { access_token, expires_in } = response.data;
 
@@ -73,65 +79,73 @@ async function getEbayAccessToken() {
 // --- API Endpoints ---
 
 // Analyze Images with OpenAI Vision
-app.post('/api/analyze-images', upload.array('images'), async (req, res) => {
+app.post('/api/analyze-images', upload.array('images'), async (req, res, next) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ error: 'No images uploaded.' });
     }
 
     try {
-        const analysisPromises = req.files.map(async (file) => {
-            const imageAsBase64 = file.buffer.toString('base64');
-            const dataUrl = `data:${file.mimetype};base64,${imageAsBase64}`;
-
-            const completion = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
-                response_format: { type: "json_object" },
-                messages: [{
-                    role: 'system',
-                    content: 'You are an expert e-commerce lister. Analyze the product image and return a structured JSON object. Be accurate and concise.'
-                }, {
-                    role: 'user',
-                    content: [{
-                        type: 'text',
-                        text: `Analyze the product in the image for an e-commerce listing. Generate a compelling SEO-friendly title. Identify brand, product type, size, colors, condition, key features, estimated manufacture year, country of manufacture, material, fabric type, and theme. Suggest a market price based on the item's attributes. Return ONLY a valid JSON object with this schema: {"seoTitle": string, "brand": string, "productType": string, "size": string, "color": {"primary": string, "secondary": string}, "condition": string, "keyFeatures": string, "estimatedYear": number | "", "countryOfManufacture": string, "material": string, "fabricType": string, "theme": string, "suggestedPrice": number, "confidence": number}`
-                    }, {
-                        type: 'image_url',
-                        image_url: { url: dataUrl, detail: 'low' }
-                    }]
-                }],
-                max_tokens: 1000,
-                temperature: 0.1,
-            });
-
-            let parsedJson = JSON.parse(completion.choices[0].message.content);
-
-            // Fetch eBay category suggestion
-            let categoryInfo = {};
-            try {
-                const token = await getEbayAccessToken();
-                const query = encodeURIComponent(parsedJson.productType || parsedJson.title || 'item');
-                const categoryResponse = await axios.get(
-                    `${EBAY_BASE}/commerce/taxonomy/v1/category_tree/0/get_category_suggestions?q=${query}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                        timeout: 10000 // 10-second timeout
-                    });
-                const suggestion = categoryResponse.data.categorySuggestions?.[0]?.category;
-                if (suggestion) {
-                    categoryInfo = { categoryId: suggestion.categoryId, categoryName: suggestion.categoryName };
-                }
-            } catch (catError) {
-                console.error("Could not fetch eBay category:", catError.message);
+        const results = [];
+        for (const file of req.files) {
+            if (file.size > 5 * 1024 * 1024) {
+                return res.status(413).json({ error: `Image ${file.originalname} is too large.` });
             }
 
-            return { ...parsedJson, ...categoryInfo };
-        });
+            const b64 = file.buffer.toString('base64');
 
-        const results = await Promise.all(analysisPromises);
+            let openaiResp;
+            try {
+                openaiResp = await openai.chat.completions.create({
+                    model: 'gpt-4o-mini',
+                    response_format: { type: "json_object" },
+                    messages: [{
+                        role: 'system',
+                        content: 'You are an expert e-commerce lister. Analyze the product image and return a structured JSON object. Be accurate and concise.'
+                    }, {
+                        role: 'user',
+                        content: [{
+                            type: 'text',
+                            text: `Analyze the product in the image for an e-commerce listing. Generate a compelling SEO-friendly title. Identify brand, product type, size, colors, condition, key features, estimated manufacture year, country of manufacture, material, fabric type, and theme. Suggest a market price based on the item's attributes. Return ONLY a valid JSON object with this schema: {"seoTitle": string, "brand": string, "productType": string, "size": string, "color": {"primary": string, "secondary": string}, "condition": string, "keyFeatures": string, "estimatedYear": number | "", "countryOfManufacture": string, "material": string, "fabricType": string, "theme": string, "suggestedPrice": number, "confidence": number}`
+                        }, {
+                            type: 'image_url',
+                            image_url: { url: `data:${file.mimetype};base64,${b64}`, detail: 'low' }
+                        }]
+                    }],
+                    max_tokens: 1000,
+                    temperature: 0.1,
+                });
+            } catch (err) {
+                const msg = err?.response?.data?.error?.message || err.message || 'OpenAI request failed';
+                return res.status(err?.response?.status || 502).json({ error: msg });
+            }
+
+            let raw = openaiResp?.choices?.[0]?.message?.content || '{}';
+            raw = raw.trim().replace(/^```json\s*/i, '').replace(/```$/, '');
+            let parsed;
+            try {
+                parsed = JSON.parse(raw);
+            } catch {
+                return res.status(502).json({ error: 'Model did not return valid JSON.', payload: raw.slice(0, 200) });
+            }
+
+            let best = {};
+            try {
+                const token = await getEbayAccessToken();
+                const q = encodeURIComponent(parsed.productType || parsed.title || 'general');
+                const url = `${EBAY_BASE}/commerce/taxonomy/v1/category_tree/0/get_category_suggestions?q=${q}`;
+                const config = {
+                    headers: { Authorization: `Bearer ${token}` },
+                    timeout: 10000 // 10-second timeout
+                };
+                const { data: cat } = await axios.get(url, config);
+                best = cat?.categorySuggestions?.[0]?.category || {};
+            } catch {}
+
+            results.push({ ...parsed, categoryId: best.categoryId, categoryName: best.categoryName });
+        }
         res.json({ success: true, data: results });
-
     } catch (error) {
-        console.error('Error in /api/analyze-images:', error);
-        res.status(500).json({ error: error.message });
+        next(error);
     }
 });
 
@@ -278,6 +292,24 @@ app.post('/api/ebay/str', async (req, res) => {
         console.error('eBay STR Error:', error.response ? error.response.data : error.message);
         res.status(500).json({ error: 'Failed to calculate STR from eBay.' });
     }
+});
+
+// Custom error handler for Multer. This must be defined after all routes.
+app.use((err, req, res, next) => {
+    if (err instanceof Multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ error: `Image too large. Each file must be under 4MB.` });
+        }
+        return res.status(400).json({ error: `File upload error: ${err.message}` });
+    }
+
+    console.error('An unexpected error occurred:', err);
+    const txt = String(err.message || '').slice(0, 200);
+    if (/entity too large|413/i.test(txt)) {
+      return res.status(413).json({ error: 'Request too large (413). This can happen if you upload too many images at once.' });
+    }
+
+    res.status(500).json({ error: err.message || 'An internal server error occurred.' });
 });
 
 // Export the app for Vercel
