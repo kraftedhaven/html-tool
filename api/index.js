@@ -1,11 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import functions from 'firebase-functions';
 import { OpenAI } from 'openai';
 import axios from 'axios';
-import { Multer } from 'multer';
-import fs from 'fs';
-import path from 'path';
+import multer from 'multer';
+import FormData from 'form-data';
 
 dotenv.config();
 
@@ -19,13 +19,13 @@ const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
 const EBAY_FINDING_API_URL = `https://svcs.ebay.com/services/search/FindingService/v1`;
 
 // Multer setup for file uploads in a serverless environment
-const upload = new Multer({
-    storage: Multer.memoryStorage(),
+const upload = multer({
+    storage: multer.memoryStorage(),
     limits: { fileSize: 4 * 1024 * 1024 }, // 4 MB limit per file
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: true })); // Important for Firebase Functions
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -158,23 +158,16 @@ app.post('/api/ebay/upload-images', upload.array('images'), async (req, res) => 
     try {
         const token = await getEbayAccessToken();
         const uploadPromises = req.files.map(async (file) => {
-            const fileBuffer = file.buffer;
-            const boundary = `----WebKitFormBoundary${Math.random().toString(16).substr(2)}`;
-            
-            const postData = [
-                `--${boundary}`,
-                'Content-Disposition: form-data; name="image"; filename="image.jpg"',
-                'Content-Type: image/jpeg',
-                '',
-                fileBuffer,
-                `--${boundary}--`,
-                ''
-            ].join('\r\n');
+            const form = new FormData();
+            form.append('image', file.buffer, {
+                filename: 'image.jpg', // eBay EPS API requires a filename.
+                contentType: file.mimetype,
+            });
 
-            const response = await axios.post(`${EBAY_BASE}/sell/inventory/v1/image`, postData, {
+            const response = await axios.post(`${EBAY_BASE}/sell/inventory/v1/image`, form, {
                  headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': `multipart/form-data; boundary=${boundary}`
+                    ...form.getHeaders(),
                  }
             });
             // The new image URL is in the Location header
@@ -294,9 +287,49 @@ app.post('/api/ebay/str', async (req, res) => {
     }
 });
 
+// Insights bot for the HTML tool
+app.post('/api/insights', async (req, res, next) => {
+    const { title, description, categoryName } = req.body;
+
+    if (!title) {
+        return res.status(400).json({ error: 'A "title" is required to get insights.' });
+    }
+
+    try {
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are an expert eBay market analyst bot for the 'html-tool' application. Your goal is to provide actionable insights to help sellers improve their listings and sales strategy. Be concise and provide data-driven advice where possible.`
+                },
+                {
+                    role: 'user',
+                    content: `I am analyzing a product to list on eBay. Here are the details:
+- Title: "${title}"
+- Description: "${description || 'Not provided.'}"
+- Category: "${categoryName || 'Not provided.'}"
+
+Please provide some quick insights. Specifically:
+1.  **Keyword Suggestions:** What are 3-5 alternative or additional keywords I should consider for the title to improve search visibility?
+2.  **Pricing Insight:** What is a common pricing strategy for this type of item (e.g., auction vs. fixed price, competitive pricing)?
+3.  **Listing Improvement:** Suggest one key improvement for the description to build buyer confidence.`
+                }
+            ],
+            temperature: 0.6,
+            max_tokens: 400,
+        });
+
+        const insights = completion.choices[0].message.content;
+        res.json({ success: true, insights });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Custom error handler for Multer. This must be defined after all routes.
 app.use((err, req, res, next) => {
-    if (err instanceof Multer.MulterError) {
+    if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(413).json({ error: `Image too large. Each file must be under 4MB.` });
         }
@@ -312,5 +345,5 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message || 'An internal server error occurred.' });
 });
 
-// Export the app for Vercel
-export default app;
+// Export the Express app as a Firebase Cloud Function
+export const api = functions.https.onRequest(app);
