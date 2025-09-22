@@ -764,6 +764,7 @@
             async _callApi(endpoint, options = {}) {
                 const { body, isForm } = options;
                 const headers = {};
+                headers['x-hht-key'] = 'YOUR_VERIFY_TOKEN'; // <-- IMPORTANT: Replace with your actual token
                 if (!isForm && body) {
                     headers['Content-Type'] = 'application/json';
                 }
@@ -849,7 +850,7 @@
                         const formData = new FormData();
                         formData.append('images', file);
 
-                        const result = await this._callApi('/api/analyze-images', { body: formData, isForm: true });
+                        const result = await this._callApi('/api/neuralSuggest', { body: formData, isForm: true });
                         const item = (result.data && result.data[0]) || {};
                         
                         const processedItem = this._mapItemToSchema(item, i);
@@ -889,7 +890,7 @@
                 this.outputTerminal.classList.remove('hidden');
 
                 try {
-                    const result = await this._callApi('/api/ebay/str', { body: JSON.stringify({ query, categoryId }) });
+                    const result = await this._callApi('/api/ebayComps', { body: JSON.stringify({ query, categoryId }) });
                     this.dataDisplay.innerHTML = `
                         <div style="text-align:center; padding: 20px; color: #e0e0e0;">
                             <h3 style="color:#fff; margin-bottom: 20px;">Live STR for "${query}"</h3>
@@ -974,7 +975,7 @@
                     this.uploadedFiles.forEach(file => {
                         imageFormData.append('images', file);
                     });
-                    const imageUploadResult = await this._callApi('/api/ebay/upload-images', { body: imageFormData, isForm: true });
+                    const imageUploadResult = await this._callApi('/api/uploadEbayImage', { body: imageFormData, isForm: true });
 
                     // Step 2: Prepare listings with EPS URLs
                     this.dataDisplay.innerHTML = `<div class="processing-indicator"><div class="neural-spinner"></div><span>2/3: Creating listings...</span></div>`;
@@ -991,7 +992,7 @@
 
                     // Step 3: Bulk upload to eBay
                     this.dataDisplay.innerHTML = `<div class="processing-indicator"><div class="neural-spinner"></div><span>3/3: Publishing to eBay...</span></div>`;
-                    const bulkUploadResult = await this._callApi('/api/bulk-upload-ebay', { body: JSON.stringify({ listings: listingsPayload }) });
+                    const bulkUploadResult = await this._callApi('/api/createListing', { body: JSON.stringify({ listings: listingsPayload }) });
 
                     this.dataDisplay.innerHTML = `<pre>eBay Upload Complete!\n\n${JSON.stringify(bulkUploadResult, null, 2)}</pre>`;
                 } catch (error) {
