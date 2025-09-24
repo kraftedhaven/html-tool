@@ -110,6 +110,28 @@ read -r -d '' HTML_CONTENT << 'EOF'
         </div>
     </div>
 
+    <!-- AI Chatbot Widget -->
+    <div id="chat-widget-container">
+        <div id="chat-bubble" class="chat-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"></path></svg>
+        </div>
+        <div id="chat-window" class="chat-window">
+            <div class="chat-header">
+                <h3>AI Sales Agent</h3>
+                <button id="close-chat" class="close-chat">&times;</button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <div class="message ai-message">
+                    <p>Hi there! I'm your AI Sales Agent. How can I help you find the perfect automation template today?</p>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask me anything...">
+                <button id="send-chat-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
@@ -437,63 +459,155 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Chatbot Styles --- */
+.chat-widget-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.chat-bubble {
+  width: 60px;
+  height: 60px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.chat-bubble:hover {
+  transform: scale(1.1);
+}
+
+.chat-bubble svg {
+  color: white;
+}
+
+.chat-window {
+  display: none; /* Hidden by default */
+  width: 350px;
+  height: 500px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  flex-direction: column;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+}
+
+.chat-header {
+  padding: 1rem;
+  background-color: var(--bg-dark);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-chat {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message {
+  max-width: 80%;
+  padding: 0.5rem 1rem;
+  border-radius: 18px;
+  line-height: 1.4;
+}
+
+.user-message {
+  background-color: var(--accent);
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-message {
+  background-color: #333;
+  color: var(--text-primary);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-input-area {
+  display: flex;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-dark);
+}
+
+#chat-input {
+  flex-grow: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  margin-right: 0.5rem;
+}
+
+#send-chat-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0 1rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+#send-chat-btn:hover {
+  background: var(--accent-hover);
+}
 EOF
 echo "$CSS_CONTENT" > style.css
 
 # 7. Create JavaScript file
 read -r -d '' JS_CONTENT << 'EOF'
-const templates = [
-  {
-    category: "Content Factory",
-    name: "AI Newsletter Generator",
-    price: 97,
-    description: "Automated newsletter creation with content curation and scheduling",
-    features: ["Auto content sourcing", "Custom branding", "Schedule sending", "Analytics dashboard"]
-  },
-  {
-    category: "Content Factory",
-    name: "Blog Post Automation",
-    price: 67,
-    description: "SEO-optimized blog posts generated from keywords",
-    features: ["SEO optimization", "Multiple formats", "Content calendar", "Keyword research"]
-  },
-  {
-    category: "Photo Studio AI",
-    name: "Product Photography AI",
-    price: 197,
-    description: "Professional product photos with AI enhancement",
-    features: ["Background removal", "Lighting optimization", "Batch processing", "Multiple angles"]
-  },
-  {
-    category: "Social Automation",
-    name: "TikTok Content Machine",
-    price: 67,
-    description: "Viral TikTok content generation and posting",
-    features: ["Trend analysis", "Auto posting", "Hashtag optimization", "Performance tracking"]
-  },
-  {
-    category: "Business Tools",
-    name: "Customer Support AI",
-    price: 297,
-    description: "24/7 AI customer service automation",
-    features: ["Multi-language support", "Knowledge base integration", "Escalation rules", "Analytics"]
-  }
-];
-
+let allTemplates = [];
 let cart = [];
 let currentFilter = 'all';
+let conversationHistory = [];
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', function() {
-  renderTemplates();
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    // Load templates from the single source of truth
+    const response = await fetch('templates.json');
+    allTemplates = await response.json();
+    renderTemplates();
+  } catch (error) {
+    console.error("Failed to load templates:", error);
+    document.getElementById('templatesGrid').innerHTML = '<p style="color: var(--text-secondary);">Error loading templates. Please try again later.</p>';
+  }
   setupEventListeners();
+  initializeChat();
 });
 
 function renderTemplates() {
   const grid = document.getElementById('templatesGrid');
   const filteredTemplates = currentFilter === 'all' 
-    ? templates 
-    : templates.filter(t => t.category === currentFilter);
+    ? allTemplates 
+    : allTemplates.filter(t => t.category === currentFilter);
   
   grid.innerHTML = filteredTemplates.map(template => `
     <div class="template-card">
@@ -507,7 +621,7 @@ function renderTemplates() {
       <ul class="template-card__features">
         ${template.features.map(feature => `<li>${feature}</li>`).join('')}
       </ul>
-      <button class="btn btn--primary" onclick="addToCart('${template.name}', ${template.price})">
+      <button class="btn btn--primary" onclick="addToCart('${template.id}')">
         Add to Cart
       </button>
     </div>
@@ -530,14 +644,24 @@ function setupEventListeners() {
   document.getElementById('closeCart').addEventListener('click', hideCart);
   document.getElementById('closeCart2').addEventListener('click', hideCart);
   
+  // Chatbot Listeners
+  document.getElementById('chat-bubble').addEventListener('click', toggleChat);
+  document.getElementById('close-chat').addEventListener('click', toggleChat);
+  document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
+  document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+  });
+
   // Search
   document.getElementById('searchInput').addEventListener('input', handleSearch);
 }
 
-function addToCart(name, price) {
-  cart.push({ name, price });
+function addToCart(templateId) {
+  const template = allTemplates.find(t => t.id === templateId);
+  if (!template) return;
+  cart.push(template);
   updateCartCount();
-  showNotification(`${name} added to cart!`);
+  showNotification(`${template.name} added to cart!`);
 }
 
 function updateCartCount() {
@@ -601,8 +725,139 @@ function showNotification(message) {
     notification.remove();
   }, 3000);
 }
+
+// --- Chatbot Functions ---
+function initializeChat() {
+    const messagesContainer = document.getElementById('chat-messages');
+    const storedHistory = localStorage.getItem('chatHistory');
+
+    if (storedHistory) {
+        conversationHistory = JSON.parse(storedHistory);
+        messagesContainer.innerHTML = ''; // Clear default message
+        conversationHistory.forEach(msg => addMessageToChat(msg.content, msg.role === 'assistant' ? 'ai' : 'user', false));
+    } else {
+        // No history, so create it from the default message
+        const firstMessageEl = messagesContainer.querySelector('.ai-message p');
+        if (firstMessageEl) {
+            const firstMessage = firstMessageEl.textContent;
+            conversationHistory = [{ role: 'assistant', content: firstMessage }];
+            localStorage.setItem('chatHistory', JSON.stringify(conversationHistory));
+        }
+    }
+}
+
+function toggleChat() {
+  const chatWindow = document.getElementById('chat-window');
+  const chatBubble = document.getElementById('chat-bubble');
+  const isHidden = chatWindow.style.display === 'none' || chatWindow.style.display === '';
+
+  if (isHidden) {
+    chatWindow.style.display = 'flex';
+    chatBubble.style.display = 'none';
+    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+  } else {
+    chatWindow.style.display = 'none';
+    chatBubble.style.display = 'block';
+  }
+}
+
+function addMessageToChat(text, sender, doScroll = true) {
+  const messagesContainer = document.getElementById('chat-messages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${sender}-message`;
+  const formattedText = text.replace(/\n/g, '<br>');
+  messageDiv.innerHTML = `<p>${formattedText}</p>`;
+  messagesContainer.appendChild(messageDiv);
+  if (doScroll) {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const messageText = input.value.trim();
+  if (!messageText) return;
+
+  addMessageToChat(messageText, 'user');
+  conversationHistory.push({ role: 'user', content: messageText });
+  input.value = '';
+  input.focus();
+
+  const thinkingIndicator = document.createElement('div');
+  thinkingIndicator.id = 'thinking-indicator';
+  thinkingIndicator.className = 'message ai-message';
+  thinkingIndicator.innerHTML = `<p>...</p>`;
+  document.getElementById('chat-messages').appendChild(thinkingIndicator);
+  document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+
+  try {
+    // IMPORTANT: Replace with your deployed Render URL in production
+    const response = await fetch('https://ai-sales-agent.onrender.com/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: conversationHistory })
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+    const aiReply = data.reply.content;
+    
+    thinkingIndicator.remove();
+    addMessageToChat(aiReply, 'ai');
+    conversationHistory.push({ role: 'assistant', content: aiReply });
+  } catch (error) {
+    thinkingIndicator.remove();
+    addMessageToChat('Sorry, I seem to be having trouble connecting. Please try again in a moment.', 'ai');
+    console.error('Chatbot Error:', error);
+  } finally {
+    localStorage.setItem('chatHistory', JSON.stringify(conversationHistory));
+  }
+}
 EOF
 echo "$JS_CONTENT" > app.js
+
+# 8. Create a shared templates.json file as the single source of truth
+read -r -d '' TEMPLATES_JSON << 'EOF'
+[
+  {
+    "id": "newsletter-gen", "category": "Content Factory", "name": "AI Newsletter Generator", "price": 97,
+    "description": "Automated newsletter creation with content curation and scheduling.",
+    "features": ["Auto content sourcing", "Custom branding", "Schedule sending", "Analytics dashboard"]
+  },
+  {
+    "id": "blog-automation", "category": "Content Factory", "name": "Blog Post Automation", "price": 67,
+    "description": "SEO-optimized blog posts generated from keywords.",
+    "features": ["SEO optimization", "Multiple formats", "Content calendar", "Keyword research"]
+  },
+  {
+    "id": "product-photo-ai", "category": "Photo Studio AI", "name": "Product Photography AI", "price": 197,
+    "description": "Professional product photos with AI enhancement and background removal.",
+    "features": ["Background removal", "Lighting optimization", "Batch processing", "Multiple angles"]
+  },
+  {
+    "id": "tiktok-machine", "category": "Social Automation", "name": "TikTok Content Machine", "price": 67,
+    "description": "Viral TikTok content generation and posting.",
+    "features": ["Trend analysis", "Auto posting", "Hashtag optimization", "Performance tracking"]
+  },
+  {
+    "id": "support-ai", "category": "Business Tools", "name": "Customer Support AI", "price": 297,
+    "description": "24/7 AI customer service automation.",
+    "features": ["Multi-language support", "Knowledge base integration", "Escalation rules", "Analytics"]
+  },
+  {
+    "id": "design-system-gen", "category": "Design Systems", "name": "AI Design System Generator", "price": 147,
+    "description": "Create a complete design system with colors, fonts, and components from a text prompt.",
+    "features": ["Brand identity generation", "Component library export", "CSS variables output", "Style guide page"]
+  },
+  {
+    "id": "ecommerce-copy", "category": "Business Tools", "name": "E-commerce Copywriter", "price": 77,
+    "description": "Generate persuasive product descriptions, titles, and ad copy for your online store.",
+    "features": ["AIDA & PAS formulas", "Tone of voice adjustment", "Platform-specific formats", "Bulk generation"]
+  }
+]
+EOF
+echo "$TEMPLATES_JSON" > templates.json
 
 # 8. Create README
 read -r -d '' README_CONTENT << 'EOF'
@@ -641,17 +896,112 @@ Deployed via GitHub Pages for immediate availability.
 EOF
 echo "$README_CONTENT" > README.md
 
-# 9. Add and commit files
-git add .
-git commit -m "feat: Add monetization strategies and launch banner"
+# 9. Create the Chatbot Server
+echo "🤖 Creating the AI Sales Agent Chatbot Server..."
+mkdir -p chatbot-server && cd chatbot-server
 
-# 10. Link to GitHub repo (you'll need to create the repo first on github.com)
+# Create package.json
+cat > package.json << 'EOF'
+{
+  "name": "chatbot-server",
+  "version": "1.0.0",
+  "description": "AI Sales Agent for the marketplace",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "openai": "^4.20.1"
+  }
+}
+EOF
+
+# Create the server file
+cat > server.js << 'EOF'
+require('dotenv').config();
+const express = require('express');
+const { OpenAI } = require('openai');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+    console.error("❌ OPENAI_API_KEY is not set. Please create a .env file and add your key.");
+    // Don't exit in production, it might be set in the hosting environment
+}
+
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+
+// Dynamically build the system prompt from templates.json in the parent directory
+const templatesPath = path.join(__dirname, '..', 'templates.json');
+const templatesData = JSON.parse(fs.readFileSync(templatesPath, 'utf-8'));
+const templatesKnowledgeBase = templatesData.map(t => 
+    `- Name: ${t.name}, Category: ${t.category}, Price: $${t.price}. Description: ${t.description}`
+).join('\n');
+
+const systemPromptTemplate = fs.readFileSync(path.join(__dirname, 'system_prompt.txt'), 'utf-8');
+const systemPrompt = systemPromptTemplate.replace('{TEMPLATES_KNOWLEDGE_BASE}', templatesKnowledgeBase);
+
+app.use(cors());
+app.use(express.json());
+
+app.post('/chat', async (req, res) => {
+    const { messages } = req.body;
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "system", content: systemPrompt }, ...messages],
+        });
+        res.json({ reply: completion.choices[0].message });
+    } catch (error) {
+        console.error('Error with OpenAI:', error);
+        res.status(500).json({ error: 'AI is taking a break. Please try again later.' });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`🤖 AI Chatbot server running on port ${port}`);
+});
+EOF
+
+# Create the system prompt for the AI
+cat > system_prompt.txt << 'EOF'
+You are a friendly and highly effective AI Sales Agent for a website called "AI Template Marketplace". Your goal is to help users find the right template and guide them towards making a purchase.
+
+Your knowledge base of available templates is:
+{TEMPLATES_KNOWLEDGE_BASE}
+
+Your primary directives are:
+1.  Be conversational and welcoming. Start by introducing yourself.
+2.  Ask clarifying questions to understand the user's needs (e.g., "What kind of business do you have?", "What task are you trying to automate?").
+3.  Based on their needs, recommend one or more specific templates. Explain *why* it's a good fit for them.
+4.  You can answer questions about price, features, and category for each template.
+5.  If a user seems interested, encourage them to "add it to the cart".
+6.  Do NOT make up templates or features. If you don't know the answer, say something like, "That's a great question. I don't have the specific details on that, but you can find more information on the template card itself."
+7.  Keep your responses concise and easy to read. Use markdown for lists if needed.
+EOF
+
+# Go back to the root project directory
+cd ..
+
+# 10. Add and commit files
+git add .
+git commit -m "feat: Integrate scalable AI chatbot server"
+
+# 11. Link to GitHub repo (you'll need to create the repo first on github.com)
 echo "Now create a repository on GitHub.com named 'ai-template-marketplace'"
 echo "Then run these commands:"
 echo "git remote add origin https://github.com/YOURUSERNAME/ai-template-marketplace.git"
 echo "git push -u origin main"
 
-# 11. Enable GitHub Pages instructions
+# 12. Enable GitHub Pages instructions
 echo ""
 echo "After pushing to GitHub:"
 echo "1. Go to your repository Settings"
@@ -661,9 +1011,9 @@ echo "4. Choose 'main' branch"
 echo "5. Your site will be live at: https://YOURUSERNAME.github.io/ai-template-marketplace"
 
 echo ""
-echo "🎉 Your AI Template Marketplace is ready for deployment with new monetization strategies!"
+echo "🎉 Your AI Template Marketplace, now with a scalable AI chatbot, is ready for deployment!"
 echo "Total setup time: Under 5 minutes"
-echo "Expected first sale: Within 2 hours of marketing the launch offer!"
+echo "Next step: Deploy your chatbot server (see instructions for Render.com) and start marketing!"
 ```
 
 ## Alternative: One-Command Deploy
@@ -4677,6 +5027,28 @@ read -r -d '' HTML_CONTENT << 'EOF'
         </div>
     </div>
 
+    <!-- AI Chatbot Widget -->
+    <div id="chat-widget-container">
+        <div id="chat-bubble" class="chat-bubble">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"></path></svg>
+        </div>
+        <div id="chat-window" class="chat-window">
+            <div class="chat-header">
+                <h3>AI Sales Agent</h3>
+                <button id="close-chat" class="close-chat">&times;</button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <div class="message ai-message">
+                    <p>Hi there! I'm your AI Sales Agent. How can I help you find the perfect automation template today?</p>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask me anything...">
+                <button id="send-chat-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
@@ -4988,6 +5360,125 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Chatbot Styles --- */
+.chat-widget-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.chat-bubble {
+  width: 60px;
+  height: 60px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.chat-bubble:hover {
+  transform: scale(1.1);
+}
+
+.chat-bubble svg {
+  color: white;
+}
+
+.chat-window {
+  display: none; /* Hidden by default */
+  width: 350px;
+  height: 500px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  flex-direction: column;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+}
+
+.chat-header {
+  padding: 1rem;
+  background-color: var(--bg-dark);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-chat {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message {
+  max-width: 80%;
+  padding: 0.5rem 1rem;
+  border-radius: 18px;
+  line-height: 1.4;
+}
+
+.user-message {
+  background-color: var(--accent);
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-message {
+  background-color: #333;
+  color: var(--text-primary);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-input-area {
+  display: flex;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-dark);
+}
+
+#chat-input {
+  flex-grow: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  margin-right: 0.5rem;
+}
+
+#send-chat-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0 1rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+#send-chat-btn:hover {
+  background: var(--accent-hover);
+}
 EOF
 echo "$CSS_CONTENT" > style.css
 
@@ -5080,6 +5571,14 @@ function setupEventListeners() {
   document.getElementById('cartBtn').addEventListener('click', showCart);
   document.getElementById('closeCart').addEventListener('click', hideCart);
   document.getElementById('closeCart2').addEventListener('click', hideCart);
+  
+  // Chatbot
+  document.getElementById('chat-bubble').addEventListener('click', toggleChat);
+  document.getElementById('close-chat').addEventListener('click', toggleChat);
+  document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
+  document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+  });
   
   // Search
   document.getElementById('searchInput').addEventListener('input', handleSearch);

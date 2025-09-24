@@ -1,0 +1,48 @@
+import axios from 'axios';
+import functions from 'firebase-functions';
+
+const EBAY_ENV = functions.config().ebay?.env || 'production';
+const EBAY_BASE = EBAY_ENV === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
+const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
+
+let ebayTokenCache = {
+    token: null,
+    expiresAt: 0,
+};
+
+export async function getEbayAccessToken() {
+    if (ebayTokenCache.token && Date.now() < ebayTokenCache.expiresAt) {
+        return ebayTokenCache.token;
+    }
+
+    const { client_id, client_secret, refresh_token } = functions.config().ebay;
+    const credentials = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
+
+    try {
+        console.log('Refreshing eBay access token...');
+        const data = new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: refresh_token,
+            scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account https://api.ebay.com/oauth/api_scope/commerce.taxonomy.readonly'
+        });
+        const config = {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${credentials}`
+            },
+            timeout: 10000
+        };
+
+        const response = await axios.post(EBAY_OAUTH_TOKEN_URL, data, config);
+        const { access_token, expires_in } = response.data;
+
+        const buffer = 5 * 60 * 1000; // 5 minutes
+        ebayTokenCache.token = access_token;
+        ebayTokenCache.expiresAt = Date.now() + (expires_in * 1000) - buffer;
+
+        return access_token;
+    } catch (error) {
+        console.error('Error refreshing eBay token:', error.response ? error.response.data : error.message);
+        throw new Error('Could not refresh eBay access token.');
+    }
+}
