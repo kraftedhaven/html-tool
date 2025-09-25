@@ -7,17 +7,25 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // Ensure assets are properly referenced for Azure Static Web Apps
+    assetsDir: 'assets',
   },
   server: {
+    port: 3000,
     proxy: {
       '/api': {
         target: process.env.VITE_API_BASE_URL || 'http://localhost:7071',
         changeOrigin: true,
-        secure: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
       }
     }
   },
   define: {
-    'process.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || '/api')
-  }
+    // Ensure environment variables are available at build time
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || '/api')
+  },
+  // Configure for Azure Static Web Apps
+  base: '/',
+  publicDir: 'public'
 })

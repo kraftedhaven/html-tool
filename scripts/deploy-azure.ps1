@@ -20,29 +20,35 @@ if (!(Get-Command az -ErrorAction SilentlyContinue)) {
 
 # Login to Azure (if not already logged in)
 Write-Host "Checking Azure login status..." -ForegroundColor Yellow
-$loginStatus = az account show 2>$null
-if (!$loginStatus) {
-    Write-Host "Please login to Azure..." -ForegroundColor Yellow
-    az login
+az account show > $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "You are not logged into Azure. Please run 'az login' interactively in your terminal and then re-run this script."
+    exit 1
 }
 
 # Create Resource Group
 Write-Host "Creating resource group: $ResourceGroupName" -ForegroundColor Yellow
 az group create --name $ResourceGroupName --location $Location
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to create resource group: $ResourceGroupName"
+    exit 1
+}
 
 # Deploy Bicep template
 Write-Host "Deploying Azure infrastructure..." -ForegroundColor Yellow
-$deploymentResult = az deployment group create `
+$deploymentJson = az deployment group create `
     --resource-group $ResourceGroupName `
     --template-file "infrastructure/main.bicep" `
     --parameters appName=$AppName `
     --query "properties.outputs" `
-    --output json | ConvertFrom-Json
+    --output json
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to deploy Azure infrastructure"
+    Write-Error "Failed to deploy Azure infrastructure. The command output was: $deploymentJson"
     exit 1
 }
+
+$deploymentResult = $deploymentJson | ConvertFrom-Json
 
 # Extract deployment outputs
 $functionAppName = $deploymentResult.functionAppName.value

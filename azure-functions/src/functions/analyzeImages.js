@@ -2,68 +2,18 @@ import { app } from '@azure/functions';
 import { OpenAI } from 'openai';
 import axios from 'axios';
 import { keyVault } from '../utils/keyVault.js';
+import { tokenManager } from '../utils/tokenManager.js';
+import { errorHandler } from '../utils/errorHandler.js';
 
 // eBay API Configuration
 const EBAY_ENV = process.env.EBAY_ENV || 'production';
 const EBAY_BASE = EBAY_ENV === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
-const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
-
-// In-memory cache for eBay token
-let ebayTokenCache = {
-    token: null,
-    expiresAt: 0,
-};
-
-async function getEbayAccessToken() {
-    // Return cached token if it's still valid
-    if (ebayTokenCache.token && Date.now() < ebayTokenCache.expiresAt) {
-        return ebayTokenCache.token;
-    }
-
-    const secrets = await keyVault.getSecrets([
-        'ebay-client-id',
-        'ebay-client-secret', 
-        'ebay-refresh-token'
-    ]);
-
-    const credentials = Buffer.from(`${secrets['ebay-client-id']}:${secrets['ebay-client-secret']}`).toString('base64');
-
-    try {
-        console.log('Refreshing eBay access token...');
-        const data = new URLSearchParams({
-            grant_type: 'refresh_token',
-            refresh_token: secrets['ebay-refresh-token'],
-            scope: 'https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.account https://api.ebay.com/oauth/api_scope/commerce.taxonomy.readonly'
-        });
-        
-        const config = {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Basic ${credentials}`
-            },
-            timeout: 10000
-        };
-
-        const response = await axios.post(EBAY_OAUTH_TOKEN_URL, data, config);
-        const { access_token, expires_in } = response.data;
-
-        // Set the expiration time to be 5 minutes before the actual expiration
-        const buffer = 5 * 60 * 1000; // 5 minutes in milliseconds
-        ebayTokenCache.token = access_token;
-        ebayTokenCache.expiresAt = Date.now() + (expires_in * 1000) - buffer;
-
-        return access_token;
-    } catch (error) {
-        console.error('Error refreshing eBay token:', error.response ? error.response.data : error.message);
-        throw new Error('Could not refresh eBay access token.');
-    }
-}
 
 app.http('analyzeImages', {
     methods: ['POST'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
-        try {
+        return await errorHandler.withErrorHandling('analyzeImages', async () => {
             const formData = await request.formData();
             const files = [];
             
@@ -145,7 +95,7 @@ app.http('analyzeImages', {
 
                 let best = {};
                 try {
-                    const token = await getEbayAccessToken();
+                    const token = await tokenManager.getEbayAccessToken();
                     const q = encodeURIComponent(parsed.productType || parsed.title || 'general');
                     const url = `${EBAY_BASE}/commerce/taxonomy/v1/category_tree/0/get_category_suggestions?q=${q}`;
                     const config = {
@@ -161,17 +111,10 @@ app.http('analyzeImages', {
                 results.push({ ...parsed, categoryId: best.categoryId, categoryName: best.categoryName });
             }
 
-            return {
-                status: 200,
-                jsonBody: { success: true, data: results }
-            };
-
-        } catch (error) {
-            console.error('Error in analyzeImages function:', error);
-            return {
-                status: 500,
-                jsonBody: { error: error.message || 'An internal server error occurred.' }
-            };
-        }
+            return errorHandler.createSuccessResponse(results, 'analyzeImages', {
+                imageCount: files.length,
+                processingTime: Date.now()
+            });
+        }, { imageCount: files?.length || 0 });
     }
 });
