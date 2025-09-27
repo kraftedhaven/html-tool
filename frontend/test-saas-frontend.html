@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Frontend Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            margin: 0;
+            padding: 2rem;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .test-button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000000;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .test-button:hover {
+            background: linear-gradient(135deg, #00cc6a, #00aa55);
+            transform: translateY(-1px);
+        }
+        .test-result {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #00ff88; }
+        .error { color: #ff453a; }
+        .warning { color: #ff9500; }
+        .info { color: #007aff; }
+        h1 { color: #00ff88; }
+        h2 { color: #e0e0e0; }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        .status-success { background: #00ff88; }
+        .status-error { background: #ff453a; }
+        .status-pending { background: #ff9500; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 SaaS Frontend Test Suite</h1>
+        <p>Test the Neural Listing Engine SaaS platform frontend components and API integration.</p>
+
+        <div class="test-section">
+            <h2>🔧 Configuration</h2>
+            <div>
+                <label for="apiUrl">API Base URL:</label>
+                <input type="text" id="apiUrl" value="http://localhost:7071/api" style="margin-left: 1rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px; width: 300px;">
+            </div>
+            <button class="test-button" onclick="testConnection()">Test API Connection</button>
+            <div id="connectionResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Subscription Plans</h2>
+            <p>Test fetching available subscription plans</p>
+            <button class="test-button" onclick="testGetPlans()">Get Subscription Plans</button>
+            <div id="plansResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>👤 User Registration</h2>
+            <p>Test user registration with different plans</p>
+            <div style="margin: 1rem 0;">
+                <input type="email" id="regEmail" placeholder="Email" style="margin: 0.25rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;">
+                <input type="password" id="regPassword" placeholder="Password" style="margin: 0.25rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;">
+                <input type="text" id="regFirstName" placeholder="First Name" style="margin: 0.25rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;">
+                <input type="text" id="regLastName" placeholder="Last Name" style="margin: 0.25rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;">
+                <select id="regPlan" style="margin: 0.25rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;">
+                    <option value="basic">Basic Plan</option>
+                    <option value="pro">Pro Plan</option>
+                    <option value="enterprise">Enterprise Plan</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testRegistration()">Register User</button>
+            <div id="registrationResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔐 User Login</h2>
+            <p>Test user authentication</p>
+            <div style="margin: 1rem 0;">
+                <input type="email" id="loginEmail" placeholder="Email" style="margin: 0.25rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;">
+                <input type="password" id="loginPassword" placeholder="Password" style="margin: 0.25rem; padding: 0.5rem; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px;">
+            </div>
+            <button class="test-button" onclick="testLogin()">Login User</button>
+            <div id="loginResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 User Dashboard Data</h2>
+            <p>Test authenticated endpoints (requires login first)</p>
+            <button class="test-button" onclick="testGetProfile()">Get User Profile</button>
+            <button class="test-button" onclick="testGetUsage()">Get Usage Statistics</button>
+            <div id="dashboardResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Subscription Management</h2>
+            <p>Test subscription updates and billing</p>
+            <button class="test-button" onclick="testUpdatePlan('pro')">Upgrade to Pro</button>
+            <button class="test-button" onclick="testUpdatePlan('enterprise')">Upgrade to Enterprise</button>
+            <button class="test-button" onclick="testCreateBillingPortal()">Create Billing Portal</button>
+            <div id="subscriptionResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Feature Testing</h2>
+            <p>Test feature access and usage tracking</p>
+            <button class="test-button" onclick="testImageAnalysis()">Test AI Analysis (with usage tracking)</button>
+            <button class="test-button" onclick="testBulkUpload()">Test Bulk Upload (feature gating)</button>
+            <div id="featureResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📈 Test Summary</h2>
+            <div id="testSummary">
+                <p>Run tests to see results summary</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('testAuthToken') || '';
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            total: 0
+        };
+
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value;
+        }
+
+        function logResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            element.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+            element.scrollTop = element.scrollHeight;
+        }
+
+        function updateTestSummary() {
+            const summary = document.getElementById('testSummary');
+            const successRate = testResults.total > 0 ? Math.round((testResults.passed / testResults.total) * 100) : 0;
+            summary.innerHTML = `
+                <div style="display: flex; gap: 2rem; align-items: center;">
+                    <div>
+                        <span class="status-indicator ${testResults.passed > 0 ? 'status-success' : 'status-pending'}"></span>
+                        Passed: ${testResults.passed}
+                    </div>
+                    <div>
+                        <span class="status-indicator ${testResults.failed > 0 ? 'status-error' : 'status-pending'}"></span>
+                        Failed: ${testResults.failed}
+                    </div>
+                    <div>
+                        <span class="status-indicator ${testResults.total > 0 ? 'status-success' : 'status-pending'}"></span>
+                        Total: ${testResults.total}
+                    </div>
+                    <div>
+                        Success Rate: ${successRate}%
+                    </div>
+                </div>
+            `;
+        }
+
+        function recordTest(passed) {
+            testResults.total++;
+            if (passed) {
+                testResults.passed++;
+            } else {
+                testResults.failed++;
+            }
+            updateTestSummary();
+        }
+
+        async function testConnection() {
+            logResult('connectionResult', 'Testing API connection...', 'info');
+            try {
+                const response = await fetch(`${getApiUrl()}/subscription/plans`);
+                if (response.ok) {
+                    logResult('connectionResult', '✅ API connection successful', 'success');
+                    recordTest(true);
+                } else {
+                    logResult('connectionResult', `❌ API connection failed: ${response.status}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('connectionResult', `❌ API connection error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testGetPlans() {
+            logResult('plansResult', 'Fetching subscription plans...', 'info');
+            try {
+                const response = await fetch(`${getApiUrl()}/subscription/plans`);
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult('plansResult', '✅ Plans fetched successfully', 'success');
+                    logResult('plansResult', `Found ${data.plans.length} plans:`, 'info');
+                    data.plans.forEach(plan => {
+                        logResult('plansResult', `  - ${plan.name}: $${plan.price}/${plan.interval}`, 'info');
+                    });
+                    recordTest(true);
+                } else {
+                    logResult('plansResult', `❌ Failed to fetch plans: ${response.status}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('plansResult', `❌ Error fetching plans: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testRegistration() {
+            const email = document.getElementById('regEmail').value || `test${Date.now()}@example.com`;
+            const password = document.getElementById('regPassword').value || 'TestPassword123!';
+            const firstName = document.getElementById('regFirstName').value || 'Test';
+            const lastName = document.getElementById('regLastName').value || 'User';
+            const plan = document.getElementById('regPlan').value;
+
+            logResult('registrationResult', `Registering user: ${email}`, 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password, firstName, lastName, plan }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('testAuthToken', authToken);
+                    logResult('registrationResult', '✅ Registration successful', 'success');
+                    logResult('registrationResult', `User ID: ${data.user.id}`, 'info');
+                    logResult('registrationResult', `Plan: ${data.user.subscription.plan}`, 'info');
+                    logResult('registrationResult', `Status: ${data.user.subscription.status}`, 'info');
+                    recordTest(true);
+                } else {
+                    const error = await response.json();
+                    logResult('registrationResult', `❌ Registration failed: ${error.error}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('registrationResult', `❌ Registration error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                logResult('loginResult', '⚠️ Please enter email and password', 'warning');
+                return;
+            }
+
+            logResult('loginResult', `Logging in user: ${email}`, 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('testAuthToken', authToken);
+                    logResult('loginResult', '✅ Login successful', 'success');
+                    logResult('loginResult', `User: ${data.user.firstName} ${data.user.lastName}`, 'info');
+                    logResult('loginResult', `Plan: ${data.user.subscription?.plan || 'None'}`, 'info');
+                    recordTest(true);
+                } else {
+                    const error = await response.json();
+                    logResult('loginResult', `❌ Login failed: ${error.error}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('loginResult', `❌ Login error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testGetProfile() {
+            if (!authToken) {
+                logResult('dashboardResult', '⚠️ Please login first', 'warning');
+                return;
+            }
+
+            logResult('dashboardResult', 'Fetching user profile...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/user/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult('dashboardResult', '✅ Profile fetched successfully', 'success');
+                    logResult('dashboardResult', `Name: ${data.user.firstName} ${data.user.lastName}`, 'info');
+                    logResult('dashboardResult', `Email: ${data.user.email}`, 'info');
+                    logResult('dashboardResult', `Plan: ${data.subscription?.plan}`, 'info');
+                    logResult('dashboardResult', `Status: ${data.subscription?.status}`, 'info');
+                    recordTest(true);
+                } else {
+                    logResult('dashboardResult', `❌ Failed to fetch profile: ${response.status}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('dashboardResult', `❌ Profile error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testGetUsage() {
+            if (!authToken) {
+                logResult('dashboardResult', '⚠️ Please login first', 'warning');
+                return;
+            }
+
+            logResult('dashboardResult', 'Fetching usage statistics...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/user/usage`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult('dashboardResult', '✅ Usage statistics fetched successfully', 'success');
+                    logResult('dashboardResult', `Listings: ${data.usage.listings.used}/${data.usage.listings.unlimited ? '∞' : data.usage.listings.limit}`, 'info');
+                    logResult('dashboardResult', `AI Analyses: ${data.usage.aiAnalyses.used}/${data.usage.aiAnalyses.unlimited ? '∞' : data.usage.aiAnalyses.limit}`, 'info');
+                    logResult('dashboardResult', `API Calls: ${data.usage.apiCalls.used} (unlimited)`, 'info');
+                    recordTest(true);
+                } else {
+                    logResult('dashboardResult', `❌ Failed to fetch usage: ${response.status}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('dashboardResult', `❌ Usage error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testUpdatePlan(newPlan) {
+            if (!authToken) {
+                logResult('subscriptionResult', '⚠️ Please login first', 'warning');
+                return;
+            }
+
+            logResult('subscriptionResult', `Updating plan to ${newPlan}...`, 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/subscription/update-plan`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify({ newPlan }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult('subscriptionResult', `✅ Plan updated to ${newPlan}`, 'success');
+                    logResult('subscriptionResult', `Status: ${data.subscription.status}`, 'info');
+                    recordTest(true);
+                } else {
+                    const error = await response.json();
+                    logResult('subscriptionResult', `❌ Plan update failed: ${error.error}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('subscriptionResult', `❌ Plan update error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testCreateBillingPortal() {
+            if (!authToken) {
+                logResult('subscriptionResult', '⚠️ Please login first', 'warning');
+                return;
+            }
+
+            logResult('subscriptionResult', 'Creating billing portal session...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/subscription/billing-portal`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify({ returnUrl: window.location.origin }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult('subscriptionResult', '✅ Billing portal created successfully', 'success');
+                    logResult('subscriptionResult', `Portal URL: ${data.url}`, 'info');
+                    recordTest(true);
+                } else {
+                    const error = await response.json();
+                    logResult('subscriptionResult', `❌ Billing portal failed: ${error.error}`, 'error');
+                    recordTest(false);
+                }
+            } catch (error) {
+                logResult('subscriptionResult', `❌ Billing portal error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        async function testImageAnalysis() {
+            if (!authToken) {
+                logResult('featureResult', '⚠️ Please login first', 'warning');
+                return;
+            }
+
+            logResult('featureResult', 'Testing AI image analysis with usage tracking...', 'info');
+            
+            // Create a simple test image (1x1 pixel PNG)
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(0, 0, 1, 1);
+            
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('images', blob, 'test.png');
+
+                try {
+                    const response = await fetch(`${getApiUrl()}/analyze-images`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`,
+                        },
+                        body: formData,
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        logResult('featureResult', '✅ AI analysis completed successfully', 'success');
+                        logResult('featureResult', 'Usage should be incremented', 'info');
+                        recordTest(true);
+                    } else {
+                        const error = await response.json();
+                        if (error.upgradeRequired) {
+                            logResult('featureResult', `⚠️ Usage limit reached: ${error.error}`, 'warning');
+                            logResult('featureResult', `Current: ${error.current}, Limit: ${error.limit}`, 'info');
+                        } else {
+                            logResult('featureResult', `❌ AI analysis failed: ${error.error}`, 'error');
+                        }
+                        recordTest(false);
+                    }
+                } catch (error) {
+                    logResult('featureResult', `❌ AI analysis error: ${error.message}`, 'error');
+                    recordTest(false);
+                }
+            }, 'image/png');
+        }
+
+        async function testBulkUpload() {
+            if (!authToken) {
+                logResult('featureResult', '⚠️ Please login first', 'warning');
+                return;
+            }
+
+            logResult('featureResult', 'Testing bulk upload feature gating...', 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/bulk-upload-ebay`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify({
+                        listings: [{
+                            sku: 'TEST-001',
+                            title: 'Test Product',
+                            description: 'Test Description',
+                            price: 29.99,
+                            imageUrls: ['https://example.com/image.jpg'],
+                            brand: 'Test Brand',
+                            size: 'M',
+                            color: 'Blue'
+                        }]
+                    }),
+                });
+
+                if (response.ok) {
+                    logResult('featureResult', '✅ Bulk upload completed successfully', 'success');
+                    recordTest(true);
+                } else {
+                    const error = await response.json();
+                    if (error.upgradeRequired) {
+                        logResult('featureResult', `⚠️ Feature access blocked: ${error.error}`, 'warning');
+                        logResult('featureResult', `Feature: ${error.feature}, Current Plan: ${error.currentPlan}`, 'info');
+                        logResult('featureResult', '✅ Feature gating working correctly', 'success');
+                        recordTest(true);
+                    } else {
+                        logResult('featureResult', `❌ Bulk upload failed: ${error.error}`, 'error');
+                        recordTest(false);
+                    }
+                }
+            } catch (error) {
+                logResult('featureResult', `❌ Bulk upload error: ${error.message}`, 'error');
+                recordTest(false);
+            }
+        }
+
+        // Initialize
+        updateTestSummary();
+        
+        // Auto-populate login fields if we have a token
+        if (authToken) {
+            logResult('connectionResult', 'Found existing auth token', 'info');
+        }
+    </script>
+</body>
+</html>

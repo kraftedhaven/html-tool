@@ -1,12 +1,13 @@
 import { app } from '@azure/functions';
 import { errorHandler } from '../utils/errorHandler.js';
+import { withUsageTracking, withFeatureAccess } from '../middleware/usageTracking.js';
 
 // Simplified endpoint for Facebook Marketplace integration
 // This demonstrates how the workflow integrates with the existing system
 app.http('facebookIntegration', {
     methods: ['POST'],
     authLevel: 'function',
-    handler: async (request, context) => {
+    handler: withFeatureAccess('marketplaceCount')(withUsageTracking('listings')(async (request, context) => {
         return await errorHandler.withErrorHandling('facebookIntegration', async () => {
             const { action, data } = await request.json();
 
@@ -30,7 +31,7 @@ app.http('facebookIntegration', {
                     throw new Error(`Unsupported action: ${action}`);
             }
         }, { action });
-    }
+    }))
 });
 
 function validateFacebookListing(productData) {

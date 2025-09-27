@@ -1,4 +1,4 @@
-import { ApplicationInsights } from '@azure/monitor-opentelemetry';
+// import { ApplicationInsights } from '@azure/monitor-opentelemetry';
 
 class AzureErrorHandler {
   constructor() {
@@ -10,10 +10,10 @@ class AzureErrorHandler {
     try {
       const connectionString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
       if (connectionString) {
-        ApplicationInsights.setup(connectionString);
-        ApplicationInsights.start();
-        this.appInsights = ApplicationInsights.defaultClient;
-        console.log('Application Insights initialized');
+        // ApplicationInsights.setup(connectionString);
+        // ApplicationInsights.start();
+        // this.appInsights = ApplicationInsights.defaultClient;
+        console.log('Application Insights would be initialized (disabled for testing)');
       }
     } catch (error) {
       console.warn('Failed to initialize Application Insights:', error.message);

@@ -1,6 +1,7 @@
 import { app } from '@azure/functions';
 import { keyVault } from '../utils/keyVault.js';
 import { errorHandler } from '../utils/errorHandler.js';
+import { checkMarketplaceAccess, withUsageTracking } from '../middleware/usageTracking.js';
 import axios from 'axios';
 
 class FacebookMarketplaceWorkflow {
@@ -383,8 +384,8 @@ class FacebookMarketplaceWorkflow {
 // Azure Function endpoints
 app.http('facebookMarketplaceWorkflow', {
     methods: ['POST'],
-    authLevel: 'function',
-    handler: async (request, context) => {
+    authLevel: 'anonymous',
+    handler: checkMarketplaceAccess('facebook')(withUsageTracking('listings')(async (request, context) => {
         return await errorHandler.withErrorHandling('facebookMarketplaceWorkflow', async () => {
             const { action, data } = await request.json();
             const workflow = new FacebookMarketplaceWorkflow();
@@ -415,7 +416,7 @@ app.http('facebookMarketplaceWorkflow', {
                     throw new Error(`Unsupported action: ${action}`);
             }
         }, { action: request.action });
-    }
+    }))
 });
 
 export { FacebookMarketplaceWorkflow };

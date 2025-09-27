@@ -140,6 +140,13 @@ app.http('mcpEbayAgentOperations', {
           totalOperations: operations.length,
           categories: categorizedOperations,
           allOperations: operations,
+          neuralListingIntegration: {
+            available: true,
+            endpoints: [
+              'analyzeImagesWithNeuralEngine',
+              'createListingWithNeuralAnalysis'
+            ]
+          },
           timestamp: new Date().toISOString()
         }
       };
@@ -147,6 +154,55 @@ app.http('mcpEbayAgentOperations', {
       return {
         status: 500,
         jsonBody: {
+          error: error.message,
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+  }
+});
+
+// Neural Listing Engine Integration endpoint
+app.http('mcpNeuralListingIntegration', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'mcp/neural-listing',
+  handler: async (request, context) => {
+    try {
+      const { imageUrls, additionalData } = await request.json();
+
+      if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+        return {
+          status: 400,
+          jsonBody: {
+            error: 'Image URLs array is required',
+            example: {
+              imageUrls: ['https://example.com/image1.jpg'],
+              additionalData: { price: 29.99, quantity: 1 }
+            }
+          }
+        };
+      }
+
+      // Create listing with Neural Listing Engine integration
+      const result = await mcpServer.createListingWithNeuralAnalysis(imageUrls, additionalData);
+
+      return {
+        status: 200,
+        jsonBody: {
+          success: true,
+          result,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      console.error('Neural Listing Integration Error:', error);
+      
+      return {
+        status: 500,
+        jsonBody: {
+          success: false,
           error: error.message,
           timestamp: new Date().toISOString()
         }

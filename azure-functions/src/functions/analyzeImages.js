@@ -4,6 +4,7 @@ import axios from 'axios';
 import { keyVault } from '../utils/keyVault.js';
 import { tokenManager } from '../utils/tokenManager.js';
 import { errorHandler } from '../utils/errorHandler.js';
+import { withUsageTracking } from '../middleware/usageTracking.js';
 
 // eBay API Configuration
 const EBAY_ENV = process.env.EBAY_ENV || 'production';
@@ -12,7 +13,7 @@ const EBAY_BASE = EBAY_ENV === 'production' ? 'https://api.ebay.com' : 'https://
 app.http('analyzeImages', {
     methods: ['POST'],
     authLevel: 'anonymous',
-    handler: async (request, context) => {
+    handler: withUsageTracking('aiAnalysis', 1)(async (request, context) => {
         return await errorHandler.withErrorHandling('analyzeImages', async () => {
             const formData = await request.formData();
             const files = [];
@@ -116,5 +117,5 @@ app.http('analyzeImages', {
                 processingTime: Date.now()
             });
         }, { imageCount: files?.length || 0 });
-    }
+    })
 });

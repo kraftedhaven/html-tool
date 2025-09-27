@@ -2,6 +2,7 @@ import { app } from '@azure/functions';
 import axios from 'axios';
 import { keyVault } from '../utils/keyVault.js';
 import { tokenManager } from '../utils/tokenManager.js';
+import { withUsageTracking, withFeatureAccess } from '../middleware/usageTracking.js';
 
 // eBay API Configuration
 const EBAY_ENV = process.env.EBAY_ENV || 'production';
@@ -10,7 +11,7 @@ const EBAY_BASE = EBAY_ENV === 'production' ? 'https://api.ebay.com' : 'https://
 app.http('bulkUploadEbay', {
     methods: ['POST'],
     authLevel: 'anonymous',
-    handler: async (request, context) => {
+    handler: withFeatureAccess('bulkUploadEnabled')(withUsageTracking('listings')(async (request, context) => {
         try {
             const { listings } = await request.json();
             
@@ -112,5 +113,5 @@ app.http('bulkUploadEbay', {
                 }
             };
         }
-    }
+    }))
 });

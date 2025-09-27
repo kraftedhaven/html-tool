@@ -159,7 +159,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-03-01' = {
     tier: 'Free'
   }
   properties: {
-    repositoryUrl: 'https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME'
+    repositoryUrl: 'https://github.com/kraftedhaven/html-tool'
     branch: 'main'
     buildProperties: {
       appLocation: '/frontend'
