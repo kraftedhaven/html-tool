@@ -15,5 +15,5 @@
       "name": "res"
     }
   ],
-  "scriptFile": "index.js"
+  "scriptFile": "../src/functions/analyzeImages.js"
 }

@@ -160,10 +160,13 @@ app.http('userLogin', {
       // Find user's subscription
       const subscription = await dbService.getSubscriptionByUserId(user.id);
 
+const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(',') || [];
+      const isAdmin = ADMIN_USER_IDS.includes(user.id);
+
       // Generate JWT token
       const jwtSecret = await getKeyVaultSecret('JWT_SECRET');
       const token = jwt.sign(
-        { userId: user.id, email, subscriptionId: subscription?.id },
+        { userId: user.id, email, subscriptionId: subscription?.id, isAdmin },
         jwtSecret,
         { expiresIn: '7d' }
       );
@@ -177,6 +180,7 @@ app.http('userLogin', {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
+            isAdmin,
             subscription: subscription ? {
               id: subscription.id,
               plan: subscription.plan,

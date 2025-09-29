@@ -1,6 +1,15 @@
 /**
  * Service Request Endpoint
  * Handles "Done-For-You" listing service requests
+ *
+ * Service Request Statuses:
+ * - pending_payment: Waiting for the user to complete payment.
+ * - pending_assignment: Waiting for a lister to be assigned.
+ * - assigned: A lister has been assigned and is working on the listings.
+ * - pending_customer_approval: Listings are complete and waiting for customer approval.
+ * - completed: The customer has approved the listings and they have been published.
+ * - rejected: The customer has rejected the listings.
+ * - cancelled: The service request has been cancelled.
  */
 
 import { app } from '@azure/functions';
@@ -318,51 +327,35 @@ app.http('getUserServiceRequests', {
 /**
  * Get specific service request details
  */
-app.http('getServiceRequest', {
+app.http('adminGetServiceRequests', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  route: 'service-requests/{id}',
+  route: 'service-requests/admin',
   handler: async (request, context) => {
     try {
-      // Authenticate user
-      const user = await authenticateUser(request);
-      if (!user) {
+      // Verify admin access
+      const authResult = await verifyAdminAccess(request);
+      if (authResult.error) {
         return {
-          status: 401,
-          jsonBody: { error: 'Authentication required' }
+          status: authResult.status,
+          jsonBody: { error: authResult.error }
         };
       }
 
-      const serviceRequestId = request.params.id;
       const db = getDatabaseService();
-      const serviceRequest = await db.getServiceRequest(serviceRequestId);
-
-      if (!serviceRequest) {
-        return {
-          status: 404,
-          jsonBody: { error: 'Service request not found' }
-        };
-      }
-
-      // Verify ownership
-      if (serviceRequest.userId !== user.id) {
-        return {
-          status: 403,
-          jsonBody: { error: 'Access denied' }
-        };
-      }
+      const serviceRequests = await db.getAllServiceRequests();
 
       return {
         status: 200,
-        jsonBody: { serviceRequest }
+        jsonBody: { serviceRequests }
       };
 
     } catch (error) {
-      context.log.error('Error fetching service request:', error);
+      context.log.error('Error fetching all service requests:', error);
       return {
         status: 500,
         jsonBody: { 
-          error: 'Failed to fetch service request',
+          error: 'Failed to fetch service requests',
           details: error.message 
         }
       };

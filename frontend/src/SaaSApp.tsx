@@ -8,14 +8,16 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginForm } from './components/Auth/LoginForm';
 import { RegisterForm } from './components/Auth/RegisterForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
+import ServiceRequestForm from './components/Services/ServiceRequestForm';
+import ServiceRequestList from './components/Admin/ServiceRequestList';
 import App from './App'; // Original Neural Listing Engine
 import './App.css';
 
-type ViewMode = 'auth' | 'dashboard' | 'engine';
+type ViewMode = 'auth' | 'dashboard' | 'engine' | 'services' | 'admin';
 type AuthMode = 'login' | 'register';
 
 const SaaSAppContent: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isAdmin } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>('auth');
   const [authMode, setAuthMode] = useState<AuthMode>('login');
 
@@ -67,6 +69,20 @@ const SaaSAppContent: React.FC = () => {
             >
               Open Neural Listing Engine
             </button>
+            <button 
+              className="switch-btn"
+              onClick={() => setViewMode('services')}
+            >
+              Request "Done-For-You" Service
+            </button>
+            {isAdmin && (
+              <button 
+                className="switch-btn"
+                onClick={() => setViewMode('admin')}
+              >
+                Admin Dashboard
+              </button>
+            )}
           </div>
         </>
       )}
@@ -82,6 +98,34 @@ const SaaSAppContent: React.FC = () => {
             </button>
           </div>
           <App />
+        </>
+      )}
+
+      {viewMode === 'services' && (
+        <>
+          <div className="engine-header">
+            <button 
+              className="back-btn"
+              onClick={() => setViewMode('dashboard')}
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+          <ServiceRequestForm />
+        </>
+      )}
+
+      {viewMode === 'admin' && (
+        <>
+          <div className="engine-header">
+            <button 
+              className="back-btn"
+              onClick={() => setViewMode('dashboard')}
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+          <ServiceRequestList />
         </>
       )}
     </div>

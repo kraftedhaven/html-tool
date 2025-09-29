@@ -4,38 +4,10 @@
  */
 
 import { app } from '@azure/functions';
-import jwt from 'jsonwebtoken';
+import { verifyAdminAccess } from '../middleware/auth.js';
 import DatabaseService from '../services/databaseService.js';
-import { getKeyVaultSecret } from '../utils/keyVault.js';
 
 const dbService = new DatabaseService();
-
-// Admin user IDs (in production, this should be in database)
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(',') || [];
-
-/**
- * Middleware to verify admin access
- */
-async function verifyAdminAccess(request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader) {
-    return { error: 'Authorization header required', status: 401 };
-  }
-
-  try {
-    const token = authHeader.replace('Bearer ', '');
-    const jwtSecret = await getKeyVaultSecret('JWT_SECRET');
-    const decoded = jwt.verify(token, jwtSecret);
-
-    if (!ADMIN_USER_IDS.includes(decoded.userId)) {
-      return { error: 'Admin access required', status: 403 };
-    }
-
-    return { userId: decoded.userId };
-  } catch (error) {
-    return { error: 'Invalid token', status: 401 };
-  }
-}
 
 /**
  * Get All Users (Admin)

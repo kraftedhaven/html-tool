@@ -512,6 +512,53 @@ class DatabaseService {
       throw error;
     }
   }
+
+  // Featured Items
+  async createFeaturedItem(listingData) {
+    await this.initialize();
+    
+    const featuredItem = {
+      id: uuidv4(),
+      ...listingData,
+      createdAt: new Date()
+    };
+
+    try {
+      const { resource } = await this.database
+        .container('featuredItems')
+        .items
+        .create(featuredItem);
+      
+      return resource;
+    } catch (error) {
+      console.error('Error creating featured item:', error);
+      throw error;
+    }
+  }
+
+  async getFeaturedItems(limit = 10) {
+    await this.initialize();
+    
+    try {
+      const querySpec = {
+        query: 'SELECT * FROM c ORDER BY c.createdAt DESC OFFSET 0 LIMIT @limit',
+        parameters: [
+          { name: '@limit', value: limit }
+        ]
+      };
+
+      const { resources } = await this.database
+        .container('featuredItems')
+        .items
+        .query(querySpec)
+        .fetchAll();
+
+      return resources;
+    } catch (error) {
+      console.error('Error fetching featured items:', error);
+      throw error;
+    }
+  }
 }
 
 export default DatabaseService;

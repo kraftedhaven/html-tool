@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Azure Functions for the Neural Listing Engine.",
-  "main": "index.js",
   "scripts": {
     "start": "func start",
     "test": "echo \"No tests yet\""

@@ -95,6 +95,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
   const [isLoading, setIsLoading] = useState(true);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const apiBaseUrl = config.apiBaseUrl;
 
   const isAuthenticated = !!user && !!token;
@@ -123,6 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(data.token);
         setUser(data.user);
         setSubscription(data.user.subscription);
+        setIsAdmin(data.user.isAdmin || false);
         localStorage.setItem('authToken', data.token);
         
         // Fetch usage data
