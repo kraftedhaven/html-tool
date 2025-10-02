@@ -52,7 +52,7 @@ class DatabaseService {
   }
 
   // User Management
-  async createUser(userData) {
+  async createUser(userData, context) {
     await this.initialize();
     
     const user = new UserModel({
@@ -68,14 +68,15 @@ class DatabaseService {
         .items
         .create(user);
       
+      context.log.info('User created successfully');
       return new UserModel(resource);
     } catch (error) {
-      console.error('Error creating user:', error);
+      context.log.error('Error creating user:', error);
       throw error;
     }
   }
 
-  async getUserById(userId) {
+  async getUserById(userId, context) {
     await this.initialize();
     
     try {
@@ -87,12 +88,12 @@ class DatabaseService {
       return resource ? new UserModel(resource) : null;
     } catch (error) {
       if (error.code === 404) return null;
-      console.error('Error fetching user:', error);
+      context.log.error('Error fetching user:', error);
       throw error;
     }
   }
 
-  async getUserByEmail(email) {
+  async getUserByEmail(email, context) {
     await this.initialize();
     
     try {
@@ -109,16 +110,16 @@ class DatabaseService {
 
       return resources.length > 0 ? new UserModel(resources[0]) : null;
     } catch (error) {
-      console.error('Error fetching user by email:', error);
+      context.log.error('Error fetching user by email:', error);
       throw error;
     }
   }
 
-  async updateUser(userId, updates) {
+  async updateUser(userId, updates, context) {
     await this.initialize();
     
     try {
-      const user = await this.getUserById(userId);
+      const user = await this.getUserById(userId, context);
       if (!user) throw new Error('User not found');
 
       const updatedUser = { ...user, ...updates, updatedAt: new Date() };
@@ -128,15 +129,16 @@ class DatabaseService {
         .item(userId, userId)
         .replace(updatedUser);
 
+      context.log.info('User updated successfully');
       return new UserModel(resource);
     } catch (error) {
-      console.error('Error updating user:', error);
+      context.log.error('Error updating user:', error);
       throw error;
     }
   }
 
   // Subscription Management
-  async createSubscription(subscriptionData) {
+  async createSubscription(subscriptionData, context) {
     await this.initialize();
     
     const subscription = new SubscriptionModel({
@@ -152,14 +154,15 @@ class DatabaseService {
         .items
         .create(subscription);
       
+      context.log.info('Subscription created successfully');
       return new SubscriptionModel(resource);
     } catch (error) {
-      console.error('Error creating subscription:', error);
+      context.log.error('Error creating subscription:', error);
       throw error;
     }
   }
 
-  async getSubscriptionById(subscriptionId) {
+  async getSubscriptionById(subscriptionId, context) {
     await this.initialize();
     
     try {
@@ -176,12 +179,12 @@ class DatabaseService {
 
       return resources.length > 0 ? new SubscriptionModel(resources[0]) : null;
     } catch (error) {
-      console.error('Error fetching subscription:', error);
+      context.log.error('Error fetching subscription:', error);
       throw error;
     }
   }
 
-  async getSubscriptionByUserId(userId) {
+  async getSubscriptionByUserId(userId, context) {
     await this.initialize();
     
     try {
@@ -198,16 +201,16 @@ class DatabaseService {
 
       return resources.length > 0 ? new SubscriptionModel(resources[0]) : null;
     } catch (error) {
-      console.error('Error fetching subscription by user:', error);
+      context.log.error('Error fetching subscription by user:', error);
       throw error;
     }
   }
 
-  async updateSubscription(subscriptionId, updates) {
+  async updateSubscription(subscriptionId, updates, context) {
     await this.initialize();
     
     try {
-      const subscription = await this.getSubscriptionById(subscriptionId);
+      const subscription = await this.getSubscriptionById(subscriptionId, context);
       if (!subscription) throw new Error('Subscription not found');
 
       const updatedSubscription = { 
@@ -221,15 +224,16 @@ class DatabaseService {
         .item(subscriptionId, subscription.userId)
         .replace(updatedSubscription);
 
+      context.log.info('Subscription updated successfully');
       return new SubscriptionModel(resource);
     } catch (error) {
-      console.error('Error updating subscription:', error);
+      context.log.error('Error updating subscription:', error);
       throw error;
     }
   }
 
   // Usage Tracking
-  async createUsageRecord(usageData) {
+  async createUsageRecord(usageData, context) {
     await this.initialize();
     
     const usage = new UsageTrackingModel({
@@ -244,14 +248,15 @@ class DatabaseService {
         .items
         .create(usage);
       
+      context.log.info('Usage record created successfully');
       return new UsageTrackingModel(resource);
     } catch (error) {
-      console.error('Error creating usage record:', error);
+      context.log.error('Error creating usage record:', error);
       throw error;
     }
   }
 
-  async getCurrentUsage(userId, periodStart, periodEnd) {
+  async getCurrentUsage(userId, periodStart, periodEnd, context) {
     await this.initialize();
     
     try {
@@ -278,12 +283,12 @@ class DatabaseService {
 
       return resources.length > 0 ? new UsageTrackingModel(resources[0]) : null;
     } catch (error) {
-      console.error('Error fetching current usage:', error);
+      context.log.error('Error fetching current usage:', error);
       throw error;
     }
   }
 
-  async updateUsage(userId, usageType, amount = 1) {
+  async updateUsage(userId, usageType, amount = 1, context) {
     await this.initialize();
     
     try {
@@ -293,10 +298,10 @@ class DatabaseService {
       const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
       // Get or create current usage record
-      let usage = await this.getCurrentUsage(userId, periodStart, periodEnd);
+      let usage = await this.getCurrentUsage(userId, periodStart, periodEnd, context);
       
       if (!usage) {
-        const subscription = await this.getSubscriptionByUserId(userId);
+        const subscription = await this.getSubscriptionByUserId(userId, context);
         usage = await this.createUsageRecord({
           userId,
           subscriptionId: subscription?.id,
@@ -305,7 +310,7 @@ class DatabaseService {
           listingsCreated: 0,
           aiAnalysesUsed: 0,
           apiCallsMade: 0
-        });
+        }, context);
       }
 
       // Update usage
@@ -317,15 +322,16 @@ class DatabaseService {
         .item(usage.id, userId)
         .replace(usage);
 
+      context.log.info('Usage updated successfully');
       return new UsageTrackingModel(resource);
     } catch (error) {
-      console.error('Error updating usage:', error);
+      context.log.error('Error updating usage:', error);
       throw error;
     }
   }
 
   // Admin functions
-  async getAllUsers(limit = 50, offset = 0) {
+  async getAllUsers(limit = 50, offset = 0, context) {
     await this.initialize();
     
     try {
@@ -345,12 +351,12 @@ class DatabaseService {
 
       return resources.map(user => new UserModel(user));
     } catch (error) {
-      console.error('Error fetching all users:', error);
+      context.log.error('Error fetching all users:', error);
       throw error;
     }
   }
 
-  async getAllSubscriptions(limit = 50, offset = 0) {
+  async getAllSubscriptions(limit = 50, offset = 0, context) {
     await this.initialize();
     
     try {
@@ -370,12 +376,12 @@ class DatabaseService {
 
       return resources.map(sub => new SubscriptionModel(sub));
     } catch (error) {
-      console.error('Error fetching all subscriptions:', error);
+      context.log.error('Error fetching all subscriptions:', error);
       throw error;
     }
   }
 
-  async getSubscriptionStats() {
+  async getSubscriptionStats(context) {
     await this.initialize();
     
     try {
@@ -398,13 +404,13 @@ class DatabaseService {
 
       return resources;
     } catch (error) {
-      console.error('Error fetching subscription stats:', error);
+      context.log.error('Error fetching subscription stats:', error);
       throw error;
     }
   }
 
   // Enhanced usage tracking with detailed metrics
-  async trackDetailedUsage(userId, usageData) {
+  async trackDetailedUsage(userId, usageData, context) {
     await this.initialize();
     
     try {
@@ -429,15 +435,16 @@ class DatabaseService {
         .items
         .create(detailedUsage);
       
+      context.log.info('Detailed usage tracked successfully');
       return resource;
     } catch (error) {
-      console.error('Error tracking detailed usage:', error);
+      context.log.error('Error tracking detailed usage:', error);
       throw error;
     }
   }
 
   // Get detailed usage analytics
-  async getDetailedUsageAnalytics(userId, startDate, endDate) {
+  async getDetailedUsageAnalytics(userId, startDate, endDate, context) {
     await this.initialize();
     
     try {
@@ -470,13 +477,13 @@ class DatabaseService {
 
       return resources;
     } catch (error) {
-      console.error('Error fetching detailed usage analytics:', error);
+      context.log.error('Error fetching detailed usage analytics:', error);
       throw error;
     }
   }
 
   // Get system-wide usage metrics for admin
-  async getSystemUsageMetrics(days = 30) {
+  async getSystemUsageMetrics(days = 30, context) {
     await this.initialize();
     
     try {
@@ -508,13 +515,13 @@ class DatabaseService {
 
       return resources;
     } catch (error) {
-      console.error('Error fetching system usage metrics:', error);
+      context.log.error('Error fetching system usage metrics:', error);
       throw error;
     }
   }
 
   // Featured Items
-  async createFeaturedItem(listingData) {
+  async createFeaturedItem(listingData, context) {
     await this.initialize();
     
     const featuredItem = {
@@ -529,14 +536,15 @@ class DatabaseService {
         .items
         .create(featuredItem);
       
+      context.log.info('Featured item created successfully');
       return resource;
     } catch (error) {
-      console.error('Error creating featured item:', error);
+      context.log.error('Error creating featured item:', error);
       throw error;
     }
   }
 
-  async getFeaturedItems(limit = 10) {
+  async getFeaturedItems(limit = 10, context) {
     await this.initialize();
     
     try {
@@ -555,9 +563,79 @@ class DatabaseService {
 
       return resources;
     } catch (error) {
-      console.error('Error fetching featured items:', error);
+      context.log.error('Error fetching featured items:', error);
       throw error;
     }
+  }
+  // ... (existing code)
+
+  // Analytics
+  async getMarketplacePerformance() {
+    await this.initialize();
+    // Mock data for now
+    return {
+      ebay: { revenue: 1200, listings: 50, conversion: 0.05 },
+      facebook: { revenue: 800, listings: 30, conversion: 0.03 },
+      etsy: { revenue: 1500, listings: 70, conversion: 0.07 },
+    };
+  }
+
+  async getRevenue() {
+    await this.initialize();
+    // Mock data for now
+    return {
+      totalRevenue: 3500,
+      profitMargin: 0.6,
+    };
+  }
+
+  async getListingPerformance() {
+    await this.initialize();
+    // Mock data for now
+    return {
+      views: 10000,
+      watchers: 500,
+      conversionRates: 0.05,
+    };
+  }
+
+  async getCompetitiveIntelligence() {
+    await this.initialize();
+    // Mock data for now
+    return {
+      competitorPrices: ['$10.00', '$12.50', '$15.00'],
+      pricingRecommendations: ['$11.00', '$13.50', '$16.00'],
+      marketTrends: ['trend1', 'trend2', 'trend3'],
+    };
+  }
+
+  async getSeoAndContentOptimization() {
+    await this.initialize();
+    // Mock data for now
+    return {
+      keywordRankings: {
+        'keyword1': 1,
+        'keyword2': 3,
+        'keyword3': 5,
+      },
+      contentOptimizationSuggestions: [
+        'suggestion1',
+        'suggestion2',
+        'suggestion3',
+      ],
+    };
+  }
+
+  async getAffiliateData() {
+    await this.initialize();
+    // Mock data for now
+    return {
+      earnings: 500,
+      statistics: {
+        referrals: 10,
+        conversionRate: 0.2,
+      },
+    };
   }
 }
 

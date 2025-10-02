@@ -10,10 +10,15 @@ import { RegisterForm } from './components/Auth/RegisterForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import ServiceRequestForm from './components/Services/ServiceRequestForm';
 import ServiceRequestList from './components/Admin/ServiceRequestList';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
+import AffiliateProgram from './components/AffiliateProgram';
+import ConsultingServices from './components/ConsultingServices';
 import App from './App'; // Original Neural Listing Engine
 import './App.css';
 
-type ViewMode = 'auth' | 'dashboard' | 'engine' | 'services' | 'admin';
+type ViewMode = 'auth' | 'dashboard' | 'engine' | 'services' | 'admin' | 'analytics' | 'affiliate' | 'consulting';
+
+
 type AuthMode = 'login' | 'register';
 
 const SaaSAppContent: React.FC = () => {
@@ -75,6 +80,24 @@ const SaaSAppContent: React.FC = () => {
             >
               Request "Done-For-You" Service
             </button>
+            <button 
+              className="switch-btn"
+              onClick={() => setViewMode('analytics')}
+            >
+              Analytics Dashboard
+            </button>
+            <button 
+              className="switch-btn"
+              onClick={() => setViewMode('affiliate')}
+            >
+              Affiliate Program
+            </button>
+            <button 
+              className="switch-btn"
+              onClick={() => setViewMode('consulting')}
+            >
+              Consulting Services
+            </button>
             {isAdmin && (
               <button 
                 className="switch-btn"
@@ -126,6 +149,48 @@ const SaaSAppContent: React.FC = () => {
             </button>
           </div>
           <ServiceRequestList />
+        </>
+      )}
+
+      {viewMode === 'analytics' && (
+        <>
+          <div className="engine-header">
+            <button 
+              className="back-btn"
+              onClick={() => setViewMode('dashboard')}
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+          <AnalyticsDashboard />
+        </>
+      )}
+
+      {viewMode === 'affiliate' && (
+        <>
+          <div className="engine-header">
+            <button 
+              className="back-btn"
+              onClick={() => setViewMode('dashboard')}
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+          <AffiliateProgram />
+        </>
+      )}
+
+      {viewMode === 'consulting' && (
+        <>
+          <div className="engine-header">
+            <button 
+              className="back-btn"
+              onClick={() => setViewMode('dashboard')}
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+          <ConsultingServices />
         </>
       )}
     </div>
