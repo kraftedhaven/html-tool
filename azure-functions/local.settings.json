@@ -3,13 +3,13 @@
   "Values": {
     "AzureWebJobsStorage": "",
     "FUNCTIONS_WORKER_RUNTIME": "node",
-    "OPENAI_API_KEY": "your-openai-key",
-    "EBAY_CLIENT_ID": "your-ebay-client-id",
-    "EBAY_CLIENT_SECRET": "your-ebay-client-secret",
-    "EBAY_REFRESH_TOKEN": "your-ebay-refresh-token",
-    "EBAY_FULFILLMENT_POLICY_ID": "your-policy-id",
-    "EBAY_PAYMENT_POLICY_ID": "your-policy-id",
-    "EBAY_RETURN_POLICY_ID": "your-policy-id",
+    "OPENAI_API_KEY": "your_openai_api_key_here",
+    "EBAY_CLIENT_ID": "your_ebay_client_id_here",
+    "EBAY_CLIENT_SECRET": "your_ebay_client_secret_here",
+    "EBAY_REFRESH_TOKEN": "your_ebay_refresh_token_here",
+    "EBAY_FULFILLMENT_POLICY_ID": "your_fulfillment_policy_id_here",
+    "EBAY_PAYMENT_POLICY_ID": "your_payment_policy_id_here",
+    "EBAY_RETURN_POLICY_ID": "your_return_policy_id_here",
     "EBAY_ENV": "production"
   },
   "Host": {

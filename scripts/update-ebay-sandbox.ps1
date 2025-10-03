@@ -91,7 +91,6 @@ try {
     } catch {
         Write-Host "  ⚠️ Could not fetch fulfillment policies: $($_.Exception.Message)" -ForegroundColor Yellow
     }
-    
 } catch {
     Write-Host "❌ eBay Sandbox connection failed: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Common issues:" -ForegroundColor Yellow
