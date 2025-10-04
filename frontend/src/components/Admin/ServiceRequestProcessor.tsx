@@ -23,8 +23,9 @@ const ServiceRequestProcessor: React.FC<ServiceRequestProcessorProps> = ({ servi
           headers: { Authorization: `Bearer ${token}` }
         });
         setServiceRequest(response.data.serviceRequest);
-      } catch (err) {
-        setError('Failed to fetch service request.');
+      } catch (err: any) {
+        const errorMessage = err?.response?.data?.error || err?.message || 'Failed to fetch service request.';
+        setError(errorMessage);
       }
       setIsLoading(false);
     };
@@ -58,8 +59,9 @@ const ServiceRequestProcessor: React.FC<ServiceRequestProcessorProps> = ({ servi
         }
       });
       setListings(response.data.data);
-    } catch (err) {
-      setError('Failed to generate listings.');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to generate listings.';
+      setError(errorMessage);
     }
     setIsLoading(false);
   };
@@ -101,8 +103,9 @@ const handlePublish = async () => {
         }
       }
       alert('Listings published successfully!');
-    } catch (err) {
-      setError('Failed to publish listings.');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to publish listings.';
+      setError(errorMessage);
     }
     setIsLoading(false);
   };
