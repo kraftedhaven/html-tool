@@ -4,11 +4,25 @@ azure-functions/local.settings.json
 
 # Node.js dependencies
 /node_modules
+node_modules/
 npm-debug.log
 
 # Azure Functions
 azure-functions/bin
 azure-functions/obj
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Build artifacts
+.next/
+out/
+build/
+dist/
 
 # Secrets and credentials
 *.key
