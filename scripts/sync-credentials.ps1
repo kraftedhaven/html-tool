@@ -36,7 +36,7 @@ function Set-KeyVaultSecret {
         az keyvault secret set --vault-name $KeyVaultName --name $Name --value $Value --output none
         Write-Host "✅ Synced $Name to Key Vault" -ForegroundColor Green
     } catch {
-        Write-Host "❌ Failed to sync $Name: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "❌ Failed to sync ${Name}: $($_.Exception.Message)" -ForegroundColor Red
     }
 }
 
@@ -64,7 +64,12 @@ $credentials = @(
     "FACEBOOK-CONVERSION-API-TOKEN",
     "ETSY-ACCESS-TOKEN",
     "OPENAI-API-KEY",
-    "PAYPAL-EMAIL"
+    "PAYPAL-EMAIL",
+    "COSMOS-DB-ENDPOINT",
+    "COSMOS-DB-KEY",
+    "STRIPE-SECRET-KEY",
+    "STRIPE-WEBHOOK-SECRET",
+    "JWT-SECRET"
 )
 
 Write-Host "🔐 Syncing credentials to Azure Key Vault..." -ForegroundColor Yellow
