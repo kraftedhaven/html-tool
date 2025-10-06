@@ -64,6 +64,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, firstName: string, lastName: string, plan?: string) => Promise<boolean>;
   logout: () => void;
@@ -94,7 +95,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [usage, setUsage] = useState<Usage | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
   const [isLoading, setIsLoading] = useState(true);
-
   const [isAdmin, setIsAdmin] = useState(false);
 
   const apiBaseUrl = config.apiBaseUrl;
@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSubscription(data.user.subscription);
         setIsAdmin(data.user.isAdmin || false);
         localStorage.setItem('authToken', data.token);
-        
+
         // Fetch usage data
         await refreshUsage();
         return true;
@@ -306,6 +306,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     isLoading,
     isAuthenticated,
+    isAdmin,
     login,
     register,
     logout,
