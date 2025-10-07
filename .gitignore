@@ -3,7 +3,7 @@
 azure-functions/local.settings.json
 
 # Node.js dependencies
-/node_modules
+node_modules/
 npm-debug.log
 
 # Azure Functions

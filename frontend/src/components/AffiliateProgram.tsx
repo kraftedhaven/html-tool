@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+
+interface AffiliateStatistics {
+  referrals: number;
+  conversionRate: number;
+}
+
+interface AffiliateData {
+  earnings: number;
+  statistics: AffiliateStatistics;
+}
 
 const AffiliateProgram = () => {
-  const [affiliateData, setAffiliateData] = useState(null);
+  const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

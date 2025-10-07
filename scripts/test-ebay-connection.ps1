@@ -1,4 +1,4 @@
-# Quick eBay Connection Test
+c# Quick eBay Connection Test
 Write-Host "Testing eBay Connection" -ForegroundColor Green
 
 # Check environment setting

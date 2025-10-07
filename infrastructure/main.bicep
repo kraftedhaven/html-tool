@@ -16,10 +16,9 @@ var functionAppName = appName
 var hostingPlanName = appName
 var applicationInsightsName = appName
 var storageAccountName = '${uniqueString(resourceGroup().id)}azfunctions'
-var keyVaultName = '${appName}-kv'
+var keyVaultName = 'hht-kv-${uniqueString(resourceGroup().id)}'
 var staticWebAppName = '${appName}-swa'
-var cdnProfileName = '${appName}-cdn'
-var cdnEndpointName = '${appName}-endpoint'
+
 
 // Storage Account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
@@ -169,57 +168,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-03-01' = {
   }
 }
 
-// CDN Profile
-resource cdnProfile 'Microsoft.Cdn/profiles@2021-06-01' = {
-  name: cdnProfileName
-  location: 'Global'
-  sku: {
-    name: 'Standard_Microsoft'
-  }
-}
 
-// CDN Endpoint
-resource cdnEndpoint 'Microsoft.Cdn/profiles/endpoints@2021-06-01' = {
-  parent: cdnProfile
-  name: cdnEndpointName
-  location: 'Global'
-  properties: {
-    originHostHeader: staticWebApp.properties.defaultHostname
-    isHttpAllowed: false
-    isHttpsAllowed: true
-    queryStringCachingBehavior: 'IgnoreQueryString'
-    origins: [
-      {
-        name: 'origin1'
-        properties: {
-          hostName: staticWebApp.properties.defaultHostname
-          httpsPort: 443
-          originHostHeader: staticWebApp.properties.defaultHostname
-        }
-      }
-    ]
-    deliveryPolicy: {
-      rules: [
-        {
-          name: 'Global'
-          order: 0
-          conditions: []
-          actions: [
-            {
-              name: 'CacheExpiration'
-              parameters: {
-                cacheBehavior: 'Override'
-                cacheType: 'All'
-                cacheDuration: '1.00:00:00'
-                typeName: 'DeliveryRuleCacheExpirationActionParameters'
-              }
-            }
-          ]
-        }
-      ]
-    }
-  }
-}
 
 // Outputs
 output functionAppName string = functionApp.name
@@ -228,4 +177,3 @@ output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
 output staticWebAppName string = staticWebApp.name
 output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
-output cdnEndpointUrl string = 'https://${cdnEndpoint.properties.hostName}'

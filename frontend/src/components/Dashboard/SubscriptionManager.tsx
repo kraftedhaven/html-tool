@@ -3,7 +3,7 @@
  * Comprehensive subscription management interface with plan upgrades, billing, and usage
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SubscriptionCard } from './SubscriptionCard';
 import { PlanUpgrade } from './PlanUpgrade';
@@ -16,12 +16,12 @@ interface SubscriptionManagerProps {
   usage: any;
 }
 
-export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ 
-  subscription, 
-  usage 
+export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
+  subscription,
+  usage
 }) => {
   const [activeSection, setActiveSection] = useState<'overview' | 'plans' | 'usage' | 'billing' | 'payment'>('overview');
-  const { createBillingPortal, updateSubscription, cancelSubscription } = useAuth();
+  const { createBillingPortal, updateSubscription } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleQuickUpgrade = async () => {
