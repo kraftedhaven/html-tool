@@ -25,7 +25,7 @@ const SustainabilityPage = () => {
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 border-b-2 border-gray-700 pb-2">How We Make a Difference</h2>
         <p className="mb-6 max-w-4xl mx-auto text-center">
-          At Hidden Haven Threads (HHT) and our creative partner, The Krafted Haven (TKH), our entire business model is a response to this crisis. We don't just sell clothes; we practice a philosophy of radical reuse and conscious creation.
+          At Hidden Haven Threads (HHT) and our creative partner, The Krafted Haven (TKH), our entire business model is a response to this crisis. We don&apos;t just sell clothes; we practice a philosophy of radical reuse and conscious creation.
         </p>
         <div className="grid md:grid-cols-3 gap-8 text-center">
           <div className="bg-gray-800 p-6 rounded-lg">
@@ -45,7 +45,7 @@ const SustainabilityPage = () => {
 
       <section className="text-center mt-12">
         <h2 className="text-2xl font-bold mb-4">Join the Movement</h2>
-        <p className="max-w-2xl mx-auto">Choosing vintage is more than a style choice; it's a vote for a healthier planet. Thank you for being part of a community that values artistry, history, and the future of our Earth.</p>
+        <p className="max-w-2xl mx-auto">Choosing vintage is more than a style choice; it&apos;s a vote for a healthier planet. Thank you for being part of a community that values artistry, history, and the future of our Earth.</p>
       </section>
     </div>
   );
