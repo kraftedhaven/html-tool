@@ -15,7 +15,6 @@ import './Dashboard.css';
 export const Dashboard: React.FC = () => {
   const { user, subscription, usage, refreshUsage, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'usage' | 'billing' | 'settings'>('overview');
-  const [billingSubTab, setBillingSubTab] = useState<'plans' | 'history' | 'payment-methods'>('plans');
 
   useEffect(() => {
     // Refresh usage data when dashboard loads

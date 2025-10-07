@@ -9,7 +9,7 @@ function Set-ApiCredential {
 }
 
 Write-Host "📱 EBAY SANDBOX SETUP" -ForegroundColor Magenta
-Write-Host "================================" -ForegroundColor Gray
+Write-Host "===============================" -ForegroundColor Gray
 Write-Host "1. Go to: https://developer.ebay.com/" -ForegroundColor Yellow
 Write-Host "2. Sign in with your eBay developer account" -ForegroundColor Yellow
 Write-Host "3. Click 'My Account' → 'Keys'" -ForegroundColor Yellow
@@ -91,7 +91,6 @@ try {
     } catch {
         Write-Host "  ⚠️ Could not fetch fulfillment policies: $($_.Exception.Message)" -ForegroundColor Yellow
     }
-    
 } catch {
     Write-Host "❌ eBay Sandbox connection failed: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host "Common issues:" -ForegroundColor Yellow

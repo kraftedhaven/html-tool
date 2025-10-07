@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => (

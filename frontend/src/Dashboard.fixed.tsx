@@ -3,12 +3,12 @@
  * Shows user profile, subscription status, usage statistics, and plan management
  */
 
-import React, { useState, useEffect } from 'react';
-// import { useAuth } from '../../contexts/AuthContext'; // Assuming this path is correct
-import { UsageChart } from './UsageChart';
-import { SubscriptionCard } from './SubscriptionCard';
-import { PlanUpgrade } from './PlanUpgrade';
-import './Dashboard.css';
+import { useState, useEffect } from 'react';
+// import { useAuth } from './contexts/AuthContext'; // Assuming this path is correct
+import { UsageChart } from './components/Dashboard/UsageChart';
+import { SubscriptionCard } from './components/Dashboard/SubscriptionCard';
+import { PlanUpgrade } from './components/Dashboard/PlanUpgrade';
+import './components/Dashboard/Dashboard.css';
 
 // Mock useAuth hook for standalone demonstration. 
 // Replace with your actual import: import { useAuth } from '../../contexts/AuthContext';

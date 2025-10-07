@@ -1,9 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+
+interface MarketplacePerformance {
+  revenue: number;
+  listings: number;
+  conversion: number;
+}
+
+interface Performance {
+  ebay: MarketplacePerformance;
+  facebook: MarketplacePerformance;
+  etsy: MarketplacePerformance;
+}
+
+interface Revenue {
+  totalRevenue: number;
+  profitMargin: number;
+}
+
+interface Listings {
+  views: number;
+  watchers: number;
+  conversionRates: number;
+}
+
+interface AnalyticsData {
+  performance: Performance;
+  revenue: Revenue;
+  listings: Listings;
+}
+
+interface CompetitiveData {
+  competitorPrices: string[];
+  pricingRecommendations: string[];
+  marketTrends: string[];
+}
+
+interface SeoData {
+  keywordRankings: Record<string, number>;
+  contentOptimizationSuggestions: string[];
+}
 
 const AnalyticsDashboard = () => {
-  const [analyticsData, setAnalyticsData] = useState(null);
-  const [competitiveData, setCompetitiveData] = useState(null);
-  const [seoData, setSeoData] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [competitiveData, setCompetitiveData] = useState<CompetitiveData | null>(null);
+  const [seoData, setSeoData] = useState<SeoData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

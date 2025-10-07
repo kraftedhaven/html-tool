@@ -20,8 +20,9 @@ const ServiceRequestList: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setServiceRequests(response.data.serviceRequests);
-      } catch (err) {
-        setError('Failed to fetch service requests.');
+      } catch (err: any) {
+        const errorMessage = err?.response?.data?.error || err?.message || 'Failed to fetch service requests.';
+        setError(errorMessage);
       }
       setIsLoading(false);
     };
