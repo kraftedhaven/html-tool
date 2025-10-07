@@ -108,8 +108,9 @@ const ServiceRequestForm: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPricing(response.data.pricing);
-    } catch (err) {
-      setError('Failed to calculate pricing.');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to calculate pricing.';
+      setError(errorMessage);
     }
   };
 
@@ -141,8 +142,9 @@ const ServiceRequestForm: React.FC = () => {
       });
       setSuccess('Service request submitted successfully! Please complete payment.');
       setClientSecret(response.data.paymentIntent.clientSecret);
-    } catch (err) {
-      setError('Failed to submit service request.');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to submit service request.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
