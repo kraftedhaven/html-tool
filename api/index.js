@@ -1,35 +1,125 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import functions from 'firebase-functions';
 import { OpenAI } from 'openai';
 import axios from 'axios';
 import multer from 'multer';
 import FormData from 'form-data';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
 const app = express();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }); // No change needed here
+const openai = new OpenAI();
 
-// eBay API Configuration
-const EBAY_ENV = process.env.EBAY_ENV || 'production';
-const EBAY_BASE = EBAY_ENV === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
-const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
-const EBAY_FINDING_API_URL = `https://svcs.ebay.com/services/search/FindingService/v1`;
-
-// Multer setup for file uploads in a serverless environment
+// Multer setup for file uploads
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 4 * 1024 * 1024 }, // 4 MB limit per file
 });
 
 // Middleware
-app.use(cors({ origin: true })); // Important for Firebase Functions
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// --- In-memory cache for eBay token ---
+// --- Admin Authentication and Inventory Management ---
+
+// Define the path to the inventory JSON file
+const INVENTORY_FILE = path.join(process.cwd(), 'db', 'inventory.json');
+
+// Helper function to read inventory data from the JSON file
+const readInventory = () => {
+    try {
+        // Check if the file exists, if not, return an empty array
+        if (!fs.existsSync(INVENTORY_FILE)) {
+            const dir = path.dirname(INVENTORY_FILE);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+            fs.writeFileSync(INVENTORY_FILE, '[]', 'utf8');
+            return [];
+        }
+        const data = fs.readFileSync(INVENTORY_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading inventory file:', error);
+        return [];
+    }
+};
+
+// Helper function to write inventory data to the JSON file
+const writeInventory = (inventory) => {
+    try {
+        fs.writeFileSync(INVENTORY_FILE, JSON.stringify(inventory, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing inventory file:', error);
+    }
+};
+
+// Simple admin authentication middleware
+const authenticateAdmin = (req, res, next) => {
+    const { username, password } = req.body;
+    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+        next();
+    } else {
+        res.status(401).json({ error: 'Unauthorized: Invalid admin credentials' });
+    }
+};
+
+// Admin login route
+app.post('/api/admin/login', authenticateAdmin, (req, res) => {
+    res.json({ success: true, message: 'Admin logged in successfully' });
+});
+
+// Admin Inventory CRUD routes
+app.get('/api/admin/inventory', authenticateAdmin, (req, res) => {
+    const inventory = readInventory();
+    res.json(inventory);
+});
+
+app.post('/api/admin/inventory', authenticateAdmin, (req, res) => {
+    const inventory = readInventory();
+    const newItem = { id: Date.now().toString(), ...req.body };
+    inventory.push(newItem);
+    writeInventory(inventory);
+    res.status(201).json(newItem);
+});
+
+app.put('/api/admin/inventory/:id', authenticateAdmin, (req, res) => {
+    const inventory = readInventory();
+    const { id } = req.params;
+    const itemIndex = inventory.findIndex(item => item.id === id);
+    if (itemIndex > -1) {
+        inventory[itemIndex] = { ...inventory[itemIndex], ...req.body };
+        writeInventory(inventory);
+        res.json(inventory[itemIndex]);
+    } else {
+        res.status(404).json({ error: 'Item not found' });
+    }
+});
+
+app.delete('/api/admin/inventory/:id', authenticateAdmin, (req, res) => {
+    let inventory = readInventory();
+    const { id } = req.params;
+    const initialLength = inventory.length;
+    inventory = inventory.filter(item => item.id !== id);
+    if (inventory.length < initialLength) {
+        writeInventory(inventory);
+        res.status(204).send();
+    } else {
+        res.status(404).json({ error: 'Item not found' });
+    }
+});
+
+// --- eBay API Configuration ---
+const EBAY_ENV = process.env.EBAY_ENV || 'production';
+const EBAY_BASE = EBAY_ENV === 'production' ? 'https://api.ebay.com' : 'https://api.sandbox.ebay.com';
+const EBAY_OAUTH_TOKEN_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
+const EBAY_FINDING_API_URL = `https://svcs.ebay.com/services/search/FindingService/v1`;
+
+// In-memory cache for eBay token
 let ebayTokenCache = {
     token: null,
     expiresAt: 0,
@@ -57,7 +147,7 @@ async function getEbayAccessToken() {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Authorization': `Basic ${credentials}`
             },
-            timeout: 10000 // 10-second timeout
+            timeout: 10000
         };
 
         const response = await axios.post(EBAY_OAUTH_TOKEN_URL, data, config);
@@ -65,7 +155,7 @@ async function getEbayAccessToken() {
         const { access_token, expires_in } = response.data;
 
         // Set the expiration time to be 5 minutes before the actual expiration
-        const buffer = 5 * 60 * 1000; // 5 minutes in milliseconds
+        const buffer = 5 * 60 * 1000;
         ebayTokenCache.token = access_token;
         ebayTokenCache.expiresAt = Date.now() + (expires_in * 1000) - buffer;
 
@@ -135,7 +225,7 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res, next) =
                 const url = `${EBAY_BASE}/commerce/taxonomy/v1/category_tree/0/get_category_suggestions?q=${q}`;
                 const config = {
                     headers: { Authorization: `Bearer ${token}` },
-                    timeout: 10000 // 10-second timeout
+                    timeout: 10000
                 };
                 const { data: cat } = await axios.get(url, config);
                 best = cat?.categorySuggestions?.[0]?.category || {};
@@ -149,7 +239,7 @@ app.post('/api/analyze-images', upload.array('images'), async (req, res, next) =
     }
 });
 
-// Upload Images to eBay EPS (Note: This uses a legacy API. Modern solutions use different flows)
+// Upload Images to eBay EPS
 app.post('/api/ebay/upload-images', upload.array('images'), async (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ error: 'No images provided for eBay upload.' });
@@ -160,7 +250,7 @@ app.post('/api/ebay/upload-images', upload.array('images'), async (req, res) => 
         const uploadPromises = req.files.map(async (file) => {
             const form = new FormData();
             form.append('image', file.buffer, {
-                filename: 'image.jpg', // eBay EPS API requires a filename.
+                filename: 'image.jpg',
                 contentType: file.mimetype,
             });
 
@@ -170,7 +260,6 @@ app.post('/api/ebay/upload-images', upload.array('images'), async (req, res) => 
                     ...form.getHeaders(),
                  }
             });
-            // The new image URL is in the Location header
             const imageUrl = response.headers.location;
             if (imageUrl) {
                  return { originalFilename: file.originalname, epsImageUrl: imageUrl };
@@ -185,7 +274,6 @@ app.post('/api/ebay/upload-images', upload.array('images'), async (req, res) => 
         res.status(500).json({ error: 'Failed to upload images to eBay.' });
     }
 });
-
 
 // Bulk Create and Publish eBay Listings
 app.post('/api/bulk-upload-ebay', async (req, res) => {
@@ -276,7 +364,7 @@ app.post('/api/ebay/str', async (req, res) => {
 
         const soldCount = soldResponse.data.findCompletedItemsResponse[0].paginationOutput[0].totalEntries[0] || '0';
         const activeCount = activeResponse.data.findItemsAdvancedResponse[0].paginationOutput[0].totalEntries[0] || '0';
-        
+
         const total = parseInt(soldCount) + parseInt(activeCount);
         const str = total > 0 ? (parseInt(soldCount) / total) * 100 : 0;
 
@@ -305,15 +393,7 @@ app.post('/api/insights', async (req, res, next) => {
                 },
                 {
                     role: 'user',
-                    content: `I am analyzing a product to list on eBay. Here are the details:
-- Title: "${title}"
-- Description: "${description || 'Not provided.'}"
-- Category: "${categoryName || 'Not provided.'}"
-
-Please provide some quick insights. Specifically:
-1.  **Keyword Suggestions:** What are 3-5 alternative or additional keywords I should consider for the title to improve search visibility?
-2.  **Pricing Insight:** What is a common pricing strategy for this type of item (e.g., auction vs. fixed price, competitive pricing)?
-3.  **Listing Improvement:** Suggest one key improvement for the description to build buyer confidence.`
+                    content: `I am analyzing a product to list on eBay. Here are the details:\n- Title: "${title}"\n- Description: "${description || 'Not provided.'}"\n- Category: "${categoryName || 'Not provided.'}"\n\nPlease provide some quick insights. Specifically:\n1.  **Keyword Suggestions:** What are 3-5 alternative or additional keywords I should consider for the title to improve search visibility?\n2.  **Pricing Insight:** What is a common pricing strategy for this type of item (e.g., auction vs. fixed price, competitive pricing)?\n3.  **Listing Improvement:** Suggest one key improvement for the description to build buyer confidence.`
                 }
             ],
             temperature: 0.6,
@@ -327,7 +407,7 @@ Please provide some quick insights. Specifically:
     }
 });
 
-// Custom error handler for Multer. This must be defined after all routes.
+// Custom error handler for Multer
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -345,5 +425,5 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message || 'An internal server error occurred.' });
 });
 
-// Export the Express app as a Firebase Cloud Function
-export const api = functions.https.onRequest(app);
+// Export the Express app as a Vercel Serverless Function
+export default app;

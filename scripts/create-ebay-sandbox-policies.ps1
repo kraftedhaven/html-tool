@@ -1,19 +1,25 @@
 # Create eBay Sandbox Policies
-Write-Host "📋 Creating eBay Sandbox Policies" -ForegroundColor Green
+Write-Host "Creating eBay Sandbox Policies..."
 
 # Get stored token
-try {
-    $tokenCmd = cmdkey /list:"HiddenHavenThreads_EBAY_ACCESS_TOKEN" 2>$null
-    if (-not $tokenCmd) {
-        Write-Host "❌ No eBay token found. Run update-ebay-sandbox.ps1 first." -ForegroundColor Red
-        exit 1
-    }
-} catch {
-    Write-Host "❌ Error accessing stored credentials." -ForegroundColor Red
+$cred = cmdkey /list:HiddenHavenThreads_EBAY_ACCESS_TOKEN
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Could not find stored eBay credentials. Please run update-ebay-sandbox.ps1 first."
     exit 1
 }
 
-$token = Read-Host "📋 Paste your eBay Sandbox User Token"
+$tokenLine = $cred | Select-String "Password"
+if (-not $tokenLine) {
+    Write-Host "Could not parse stored eBay credentials."
+    exit 1
+}
+
+$token = $tokenLine.ToString().Split()[-1]
+if (-not $token) {
+    Write-Host "Could not extract token from stored credentials."
+    exit 1
+}
+
 
 $headers = @{
     "Authorization" = "Bearer $token"
@@ -21,8 +27,8 @@ $headers = @{
     "X-EBAY-C-MARKETPLACE-ID" = "EBAY_US"
 }
 
-Write-Host "`n💳 Creating Payment Policy..." -ForegroundColor Yellow
-
+# Payment Policy
+Write-Host "Creating Payment Policy..."
 $paymentPolicyData = @{
     name = "Sandbox Payment Policy"
     description = "Test payment policy for sandbox"
@@ -41,16 +47,14 @@ $paymentPolicyData = @{
 
 try {
     $paymentResponse = Invoke-RestMethod -Uri "https://api.sandbox.ebay.com/sell/account/v1/payment_policy" -Headers $headers -Method POST -Body $paymentPolicyData
-    Write-Host "✅ Payment Policy created: $($paymentResponse.paymentPolicyId)" -ForegroundColor Green
-    
-    # Store the policy ID
+    Write-Host "Payment Policy created: $($paymentResponse.paymentPolicyId)"
     cmdkey /generic:"HiddenHavenThreads_EBAY_PAYMENT_POLICY_ID" /user:"api" /pass:"$($paymentResponse.paymentPolicyId)" | Out-Null
 } catch {
-    Write-Host "⚠️ Payment Policy creation failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host "Payment Policy creation failed: $($_.Exception.Message)"
 }
 
-Write-Host "`n🔄 Creating Return Policy..." -ForegroundColor Yellow
-
+# Return Policy
+Write-Host "Creating Return Policy..."
 $returnPolicyData = @{
     name = "Sandbox Return Policy"
     description = "Test return policy for sandbox"
@@ -66,16 +70,14 @@ $returnPolicyData = @{
 
 try {
     $returnResponse = Invoke-RestMethod -Uri "https://api.sandbox.ebay.com/sell/account/v1/return_policy" -Headers $headers -Method POST -Body $returnPolicyData
-    Write-Host "✅ Return Policy created: $($returnResponse.returnPolicyId)" -ForegroundColor Green
-    
-    # Store the policy ID
+    Write-Host "Return Policy created: $($returnResponse.returnPolicyId)"
     cmdkey /generic:"HiddenHavenThreads_EBAY_RETURN_POLICY_ID" /user:"api" /pass:"$($returnResponse.returnPolicyId)" | Out-Null
 } catch {
-    Write-Host "⚠️ Return Policy creation failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host "Return Policy creation failed: $($_.Exception.Message)"
 }
 
-Write-Host "`n📦 Creating Fulfillment Policy..." -ForegroundColor Yellow
-
+# Fulfillment Policy
+Write-Host "Creating Fulfillment Policy..."
 $fulfillmentPolicyData = @{
     name = "Sandbox Fulfillment Policy"
     description = "Test fulfillment policy for sandbox"
@@ -112,13 +114,10 @@ $fulfillmentPolicyData = @{
 
 try {
     $fulfillmentResponse = Invoke-RestMethod -Uri "https://api.sandbox.ebay.com/sell/account/v1/fulfillment_policy" -Headers $headers -Method POST -Body $fulfillmentPolicyData
-    Write-Host "✅ Fulfillment Policy created: $($fulfillmentResponse.fulfillmentPolicyId)" -ForegroundColor Green
-    
-    # Store the policy ID
+    Write-Host "Fulfillment Policy created: $($fulfillmentResponse.fulfillmentPolicyId)"
     cmdkey /generic:"HiddenHavenThreads_EBAY_FULFILLMENT_POLICY_ID" /user:"api" /pass:"$($fulfillmentResponse.fulfillmentPolicyId)" | Out-Null
 } catch {
-    Write-Host "⚠️ Fulfillment Policy creation failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host "Fulfillment Policy creation failed: $($_.Exception.Message)"
 }
 
-Write-Host "`n🎉 Sandbox policies setup complete!" -ForegroundColor Green
-Write-Host "You can now test listing items in the eBay sandbox environment." -ForegroundColor Cyan
+Write-Host "Sandbox policies setup complete!"
