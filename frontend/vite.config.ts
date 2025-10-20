@@ -14,16 +14,12 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_BASE_URL || 'http://localhost:7071',
+        target: 'http://localhost:7071',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       }
     }
-  },
-  define: {
-    // Ensure environment variables are available at build time
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || '/api')
   },
   // Configure for Azure Static Web Apps
   base: '/',
