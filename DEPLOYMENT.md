@@ -99,6 +99,11 @@ Configure these in your Azure Functions App Settings:
 - Check Node.js version compatibility (v18.x recommended)
 - Review error logs in GitHub Actions
 
+### Linting Warnings
+- The codebase currently has some ESLint warnings/errors that are non-blocking
+- These are logged during deployment but do not prevent deployment
+- It's recommended to fix these incrementally to improve code quality
+
 ### Function App Issues
 - Verify publish profile is current
 - Check function app configuration in Azure Portal
