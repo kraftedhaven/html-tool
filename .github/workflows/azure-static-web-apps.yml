@@ -52,7 +52,7 @@ jobs:
       - name: Run tests
         run: |
           cd frontend
-          npm run lint || echo "Linting has warnings/errors but continuing deployment"
+          npm run lint -- --max-warnings=0
           # Add more tests as needed
 
       - name: Build And Deploy
