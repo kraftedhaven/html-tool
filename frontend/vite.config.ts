@@ -21,10 +21,6 @@ export default defineConfig({
       }
     }
   },
-  define: {
-    // Ensure environment variables are available at build time
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || '/api')
-  },
   // Configure for Azure Static Web Apps
   base: '/',
   publicDir: 'public'
