@@ -1,49 +1,37 @@
-# html-tool
+# Hi there, I'm Korinn! 👋
 
-Neural Listing Engine for product analysis and eBay listing.
+I'm a software developer passionate about building smart, full-stack applications that solve real-world problems. I enjoy working across the entire stack, from crafting responsive frontends to building scalable backend APIs.
 
-## Quick Start
+---
 
-### Prerequisites
-- Node.js 18.x or later
-- npm or yarn
+### 🌱 I'm currently working on...
 
-### Development
+Right now, my focus is on my **Neural Listing Engine** project. I'm building a tool that uses AI to analyze product data and automate the creation of optimized eBay listings.
 
-1. Install dependencies:
-```bash
-# Frontend
-cd frontend
-npm install
+---
 
-# Azure Functions
-cd azure-functions
-npm install
-```
+### 🚀 My Toolkit
 
-2. Run locally:
-```bash
-# Frontend
-cd frontend
-npm run dev
+Here are some of the technologies I'm proficient in:
 
-# Azure Functions
-cd azure-functions
-npm start
-```
+* **Frontend:** React, TypeScript, Vite, HTML5, CSS3
+* **Backend:** Node.js, Express.js, Azure Functions
+* **Databases:** Couchbase, PostgreSQL, MongoDB
+* **DevOps & Cloud:** GitHub Actions (CI/CD), Azure, Vercel
+* **Tools:** Git, VS Code, npm
 
-## Deployment
+---
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions to Azure.
+### 📊 My GitHub Stats
 
-## Project Structure
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=[YOUR_USERNAME]&show_icons=true&theme=radical" alt="Your GitHub Stats" />
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=[YOUR_USERNAME]&layout=compact&theme=radical" alt="Top Languages" />
+</p>
 
-- `frontend/` - React frontend application (Vite + TypeScript)
-- `azure-functions/` - Azure Functions backend API
-- `api/` - Express.js API (alternative backend)
-- `public/` - Static assets
-- `.github/workflows/` - CI/CD workflows
+---
+        
+### 📫 Get in Touch
 
-## License
-
-Proprietary
+* **LinkedIn:** https://www.linkedin.com/in/korinn-clark-475523221?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app
+* **Email:** kht@hiddenhaventhreads.com
