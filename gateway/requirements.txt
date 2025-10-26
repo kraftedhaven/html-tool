@@ -1,0 +1,26 @@
+# FastAPI Gateway Microservice Dependencies
+
+# Core FastAPI framework
+fastapi==0.115.0
+
+# ASGI server for production deployment
+uvicorn[standard]==0.31.0
+
+# HTTP client for proxying requests to microservices
+httpx==0.27.2
+
+# JWT token handling for authentication
+python-jose[cryptography]==3.3.0
+
+# Password hashing and validation
+passlib[bcrypt]==1.7.4
+
+# Data validation and settings management
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# Python multipart for file upload handling
+python-multipart==0.0.12
+
+# Environment variable management
+python-dotenv==1.0.1
