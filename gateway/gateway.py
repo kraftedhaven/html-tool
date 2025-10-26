@@ -194,6 +194,21 @@ async def authenticate(
     )
 
 
+def get_auth_identifier(auth: Dict[str, Any]) -> str:
+    """
+    Get a safe authentication identifier for logging (without exposing API keys)
+    """
+    if auth.get('auth_type') == 'jwt':
+        return f"user:{auth.get('username', 'unknown')}"
+    elif auth.get('auth_type') == 'api_key':
+        # Only show first few characters of API key for security
+        api_key = auth.get('api_key', '')
+        if len(api_key) > 4:
+            return f"api_key:{api_key[:4]}***"
+        return "api_key:***"
+    return "unknown"
+
+
 # ============================================================================
 # MIDDLEWARE FOR REQUEST/RESPONSE LOGGING
 # ============================================================================
@@ -310,7 +325,7 @@ async def upload_endpoint(
     - Implementing resumable uploads for reliability
     """
     try:
-        logger.info(f"Upload request from {auth.get('username', auth.get('api_key'))}")
+        logger.info(f"Upload request from {get_auth_identifier(auth)}")
         
         # Prepare multipart form data for proxying
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
@@ -356,7 +371,7 @@ async def generate_listing_endpoint(
     - Caching frequent requests
     """
     try:
-        logger.info(f"Generate listing request from {auth.get('username', auth.get('api_key'))}")
+        logger.info(f"Generate listing request from {get_auth_identifier(auth)}")
         
         body = await request.json()
         
@@ -395,7 +410,7 @@ async def syndicate_endpoint(
     - Circuit breaker pattern for external service failures
     """
     try:
-        logger.info(f"Syndication request from {auth.get('username', auth.get('api_key'))}")
+        logger.info(f"Syndication request from {get_auth_identifier(auth)}")
         
         body = await request.json()
         
@@ -433,7 +448,7 @@ async def research_endpoint(
     - Result pagination for large datasets
     """
     try:
-        logger.info(f"Research request from {auth.get('username', auth.get('api_key'))}")
+        logger.info(f"Research request from {get_auth_identifier(auth)}")
         
         body = await request.json()
         
