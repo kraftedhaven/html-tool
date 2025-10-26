@@ -57,6 +57,8 @@ jobs:
 
       - name: Build And Deploy
         id: builddeploy
+        # Only deploy if Azure secrets are configured
+        if: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN != '' }}
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
@@ -69,6 +71,13 @@ jobs:
           # Environment variables for build
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
+      - name: Skip Deployment Notice
+        if: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN == '' }}
+        run: |
+          echo "⚠️  Azure Static Web Apps deployment skipped - secrets not configured"
+          echo "To enable deployment, configure this repository secret:"
+          echo "  - AZURE_STATIC_WEB_APPS_API_TOKEN"
+
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
@@ -76,6 +85,8 @@ jobs:
     steps:
       - name: Close Pull Request
         id: closepullrequest
+        # Only close PR deployment if Azure secrets are configured
+        if: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN != '' }}
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
