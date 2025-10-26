@@ -31,15 +31,15 @@ jobs:
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
         npm ci
-        # Build only if build script exists
-        if npm run | grep -q "build"; then
+        # Build only if build script exists in package.json
+        if grep -q '"build"' package.json; then
           npm run build
         fi
         popd
 
     - name: 'Run Azure Functions Action'
       # Only deploy if Azure secrets are configured
-      if: ${{ secrets.AZURE_FUNCTIONAPP_NAME != '' && secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE != '' }}
+      if: ${{ secrets.AZURE_FUNCTIONAPP_NAME && secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
       uses: Azure/functions-action@v1
       id: fa
       with:
@@ -49,7 +49,7 @@ jobs:
         respect-funcignore: true
     
     - name: 'Skip Deployment Notice'
-      if: ${{ secrets.AZURE_FUNCTIONAPP_NAME == '' || secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE == '' }}
+      if: ${{ !secrets.AZURE_FUNCTIONAPP_NAME || !secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
       run: |
         echo "⚠️  Azure Functions deployment skipped - secrets not configured"
         echo "To enable deployment, configure these repository secrets:"
