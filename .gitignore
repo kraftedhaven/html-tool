@@ -28,3 +28,26 @@ dist/
 *.key
 *.pem
 credentials.json
+
+# IDE
+.vscode/
+.idea/
+.vs/
+
+# Frontend artifacts
+frontend/dist/
+frontend/build/
+frontend/node_modules/
+
+# .NET build artifacts
+**/bin/
+**/obj/
+*.user
+*.suo
+*.pdb
+*.dll
+*.exe
+
+# OS files
+.DS_Store
+Thumbs.db

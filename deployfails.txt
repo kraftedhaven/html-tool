@@ -1,0 +1,166 @@
+Revise README with personal details and project focus
+Azure Static Web Apps CI/CD #44: Commit 3c7eda5 pushed by kraftedhaven
+Oct 22, 3:15 AM EDT
+ 53s main
+chore(deps-dev): bump vite from 7.1.6 to 7.1.11 in /frontend in the npm_and_yarn group across 1 directory
+Azure Static Web Apps CI/CD #43: Pull request #7 closed by dependabot bot
+Oct 22, 2:00 AM EDT
+ 55s dependabot/npm_and_yarn/frontend/npm_and_yarn-fd296dbd23
+Enable deployment by fixing build errors and adding comprehensive documentation
+Azure Static Web Apps CI/CD #41: Pull request #6 closed by kraftedhaven
+Oct 22, 1:59 AM EDT
+ 54s copilot/enable-deployment-feature
+Merge pull request #6 from kraftedhaven/copilot/enable-deployment-fea…
+Azure Static Web Apps CI/CD #42: Commit be62d9d pushed by kraftedhaven
+Oct 22, 1:59 AM EDT
+ 49s main
+Enable deployment by fixing build errors and adding comprehensive documentation
+Azure Static Web Apps CI/CD #39: Pull request #6 synchronize by kraftedhaven
+Oct 21, 4:48 AM EDT
+ 54s copilot/enable-deployment-feature
+Enable deployment by fixing build errors and adding comprehensive documentation
+Azure Static Web Apps CI/CD #38: Pull request #6 synchronize by kraftedhaven
+Oct 21, 4:42 AM EDT
+ 49s copilot/enable-deployment-feature
+chore(deps-dev): bump vite from 7.1.6 to 7.1.11 in /frontend in the npm_and_yarn group across 1 directory
+Azure Static Web Apps CI/CD #37: Pull request #7 opened by dependabot bot
+Oct 20, 7:09 PM EDT
+ 52s dependabot/npm_and_yarn/frontend/npm_and_yarn-fd296dbd23
+Enable deployment by fixing build errors and adding comprehensive documentation
+Azure Static Web Apps CI/CD #35: Pull request #6 synchronize by Copilot AI
+Oct 20, 2:45 PM EDT
+ 1m 4s copilot/enable-deployment-feature
+Enable deployment by fixing build errors and adding comprehensive documentation
+Azure Static Web Apps CI/CD #36: Pull request #6 synchronize by Copilot AI
+Oct 20, 2:45 PM EDT
+ 1m 1s copilot/enable-deployment-feature
+Add initial database directory
+Azure Static Web Apps CI/CD #31: Commit 2b3d202 pushed by kraftedhaven
+Oct 8, 3:57 AM EDT
+ 41s main
+Ready to modify api/index.js - awaiting replacement content
+Azure Static Web Apps CI/CD #30: Pull request #5 closed by kraftedhaven
+Oct 8, 2:27 AM EDT
+ 56s copilot/update-html-tool-api-index
+Merge pull request #1 from kraftedhaven/dependabot/npm_and_yarn/azure…
+Azure Static Web Apps CI/CD #28: Commit b4c7bc8 pushed by kraftedhaven
+Oct 7, 7:26 PM EDT
+ 47s main
+chore(deps): bump multer from 1.4.5-lts.2 to 2.0.2 in /azure-functions in the npm_and_yarn group across 1 directory
+Azure Static Web Apps CI/CD #27: Pull request #1 closed by kraftedhaven
+Oct 7, 7:26 PM EDT
+ 51s dependabot/npm_and_yarn/azure-functions/npm_and_yarn-0d7ef37a24
+chore(deps): bump multer from 1.4.5-lts.2 to 2.0.2 in /azure-functions in the npm_and_yarn group across 1 directory
+Azure Static Web Apps CI/CD #26: Pull request #1 synchronize by kraftedhaven
+Oct 7, 7:26 PM EDT
+ 43s dependabot/npm_and_yarn/azure-functions/npm_and_yarn-0d7ef37a24
+Merge pull request #2 from kraftedhaven/copilot/fix-09629be4-368c-4a4…
+Azure Static Web Apps CI/CD #25: Commit cb4fe51 pushed by kraftedhaven
+Oct 7, 7:25 PM EDT
+ 47s main
+Fix error handling to display actual API error messages in service request components
+Azure Static Web Apps CI/CD #24: Pull request #2 closed by kraftedhaven
+Oct 7, 7:25 PM EDT
+ 51s copilot/fix-09629be4-368c-4a46-a1bb-70790ba7ee3b
+Fix error handling to display actual API error messages in service request components
+Azure Static Web Apps CI/CD #23: Pull request #2 synchronize by kraftedhaven
+Oct 7, 7:25 PM EDT
+ 42s copilot/fix-09629be4-368c-4a46-a1bb-70790ba7ee3b
+Merge pull request #3 from kraftedhaven/copilot/fix-242f91f2-93c0-4ce…
+Azure Static Web Apps CI/CD #22: Commit e2707cc pushed by kraftedhaven
+Oct 7, 7:24 PM EDT
+ 45s main
+Fix linting errors and improve .gitignore configuration
+Azure Static Web Apps CI/CD #21: Pull request #3 closed by kraftedhaven
+Oct 7, 7:24 PM EDT
+ 50s copilot/fix-242f91f2-93c0-4ceb-bef9-8f78d5795796
+Fix linting errors and improve .gitignore configuration
+Azure Static Web Apps CI/CD #20: Pull request #3 synchronize by kraftedhaven
+Oct 7, 7:23 PM EDT
+ 47s copilot/fix-242f91f2-93c0-4ceb-bef9-8f78d5795796
+Fix error handling to display actual API error messages in service request components
+Azure Static Web Apps CI/CD #19: Pull request #2 synchronize by kraftedhaven
+Oct 7, 2:35 PM EDT
+ 41s copilot/fix-09629be4-368c-4a46-a1bb-70790ba7ee3b
+Merge pull request #4 from kraftedhaven/copilot/fix-d3dd3990-b2a3-48b…
+Deploy Azure Functions #6: Commit b254f40 pushed by kraftedhaven
+Oct 7, 1:55 AM EDT
+ 23s main
+Merge pull request #4 from kraftedhaven/copilot/fix-d3dd3990-b2a3-48b…
+Azure Static Web Apps CI/CD #18: Commit b254f40 pushed by kraftedhaven
+Oct 7, 1:55 AM EDT
+ 46s main
+chore(deps): Bump multer from 1.4.5-lts.1 to 2.0.2 and fix node_modules tracking
+Azure Static Web Apps CI/CD #17: Pull request #4 closed by kraftedhaven
+Oct 7, 1:55 AM EDT
+ 49s copilot/fix-d3dd3990-b2a3-48bc-a612-53092ea883cd
+chore(deps): Bump multer from 1.4.5-lts.1 to 2.0.2 and fix node_modules tracking
+Azure Static Web Apps CI/CD #16: Pull request #4 synchronize by Copilot AI
+Oct 6, 10:35 AM EDT
+Fix linting errors and improve .gitignore configuration
+Azure Static Web Apps CI/CD #15: Pull request #3 synchronize by Copilot AI
+Oct 6, 10:31 AM EDT
+ 51s copilot/fix-242f91f2-93c0-4ceb-bef9-8f78d5795796
+Updated dependencies and removed unused imports
+Azure Static Web Apps CI/CD #10: Commit 634508b pushed by kraftedhaven
+Oct 6, 5:08 AM EDT
+ 47s main
+DATNEWNEW
+Azure Static Web Apps CI/CD #9: Commit 00fe0e8 pushed by kraftedhaven
+Oct 6, 1:43 AM EDT
+ 53s main
+Fix error handling to display actual API error messages in service request components
+Azure Static Web Apps CI/CD #8: Pull request #2 synchronize by Copilot AI
+Oct 4, 7:47 AM EDT
+ 46s copilot/fix-09629be4-368c-4a46-a1bb-70790ba7ee3b
+Add revenue stream automation and fix credential management
+Azure Static Web Apps CI/CD #6: Commit 3a7b247 pushed by kraftedhaven
+Oct 2, 8:42 PM EDT
+ 43s main
+Add revenue stream automation and fix credential management
+Deploy Azure Functions #5: Commit 3a7b247 pushed by kraftedhaven
+Oct 2, 8:42 PM EDT
+ 31s main
+ci: add Azure Static Web Apps workflow file
+Azure Static Web Apps CI/CD #1: Commit 2330229 pushed by kraftedhaven
+Oct 2, 4:21 AM EDT
+ 9s main
+ci: add Azure Static Web Apps workflow file
+Azure Static Web Apps CI/CD #5: Commit 2330229 pushed by kraftedhaven
+Oct 2, 4:21 AM EDT
+ 43s main
+CodeQL Setup
+CodeQL #1: by kraftedhaven
+Oct 2, 2:31 AM EDT
+ 6s main
+chore(deps): bump multer from 1.4.5-lts.2 to 2.0.2 in /azure-functions in the npm_and_yarn group across 1 directory
+Azure Static Web Apps CI/CD #4: Pull request #1 opened by dependabot bot
+Oct 2, 2:30 AM EDT
+ 4s dependabot/npm_and_yarn/azure-functions/npm_and_yarn-0d7ef37a24
+Deploy Azure Functions
+Deploy Azure Functions #4: Manually run by kraftedhaven
+Oct 1, 9:54 PM EDT
+ 3s main
+Complete tasks 9-12: Implement analytics, affiliate program, testing,…
+Azure Static Web Apps CI/CD #3: Commit 566e8c7 pushed by kraftedhaven
+Oct 1, 8:51 PM EDT
+ 8s main
+Complete tasks 9-12: Implement analytics, affiliate program, testing,…
+Deploy Azure Functions #3: Commit 566e8c7 pushed by kraftedhaven
+Oct 1, 8:51 PM EDT
+ 3s main
+final
+Azure Static Web Apps CI/CD #2: Commit d6becbe pushed by kraftedhaven
+Oct 1, 8:29 PM EDT
+ 3s main
+final
+Deploy Azure Functions #2: Commit d6becbe pushed by kraftedhaven
+Oct 1, 8:29 PM EDT
+ 3s main
+tasks 7-8
+Deploy Azure Functions #1: Commit 547a9aa pushed by kraftedhaven
+Sep 29, 2:05 AM EDT
+ 3s main
+tasks 7-8
+Azure Static Web Apps CI/CD #1: Commit 547a9aa pushed by kraftedhaven
+Sep 29, 2:05 AM EDT

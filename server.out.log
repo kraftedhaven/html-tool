@@ -1,0 +1,7 @@
+🤖 Initializing Free AI modules...
+🚀 Simple Free AI Server running on port 3200
+🤖 AI Type: Simple Free AI (No Heavy Dependencies)
+💾 Memory Usage: Low
+📱 Mobile Scanner: http://localhost:3200/mobile-scanner
+⚡ Startup: Fast
+🔗 Test endpoint: http://localhost:3200/api/health
