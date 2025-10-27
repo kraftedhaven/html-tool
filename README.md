@@ -35,3 +35,5 @@ Here are some of the technologies I'm proficient in:
 
 * **LinkedIn:** https://www.linkedin.com/in/korinn-clark-475523221?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app
 * **Email:** kht@hiddenhaventhreads.com
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/1c6a239c-f799-456d-9fc7-7292ded1b7d7/deploy-status)](https://app.netlify.com/projects/soft-donut-9f77a6/deploys)
