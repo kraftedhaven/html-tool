@@ -236,7 +236,7 @@ All requests and responses are logged in JSON format for easy parsing and analys
 
 ```json
 {
-  "timestamp": "2025-10-26T00:00:00.000Z",
+  "timestamp": "2024-01-01T00:00:00.000Z",
   "level": "INFO",
   "message": "REQUEST: {\"request_id\": \"...\", \"method\": \"POST\", \"url\": \"...\", ...}"
 }
