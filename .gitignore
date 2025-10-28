@@ -30,7 +30,7 @@ dist/
 credentials.json
 
 # IDE
-.vscode/
+
 .idea/
 .vs/
 

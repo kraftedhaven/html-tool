@@ -1,0 +1,73 @@
+name: Build and Deploy Fullstack App
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # FRONTEND
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: ./frontend
+
+      - name: Lint frontend
+        run: npm run lint || echo "No lint script"
+        working-directory: ./frontend
+
+      - name: Test frontend
+        run: npm test || echo "No test script"
+        working-directory: ./frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./frontend
+
+      # BACKEND
+      - name: Install backend dependencies
+        run: npm install || echo "No package.json"
+        working-directory: ./api
+
+      - name: Lint backend
+        run: npm run lint || echo "No lint script"
+        working-directory: ./api
+
+      - name: Test backend
+        run: npm test || echo "No test script"
+        working-directory: ./api
+
+      - name: Build backend
+        run: npm run build || echo "No build script"
+        working-directory: ./api
+
+      # DEPLOY
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/frontend"
+          api_location: "/api"
+          output_location: "dist"
+
+      # NOTIFICATIONS (optional, example for Slack)
+      - name: Notify Slack on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

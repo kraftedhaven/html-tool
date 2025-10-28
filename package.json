@@ -5,7 +5,9 @@
   "main": "api/index.js",
   "type": "module",
   "scripts": {
-    "start": "node api/index.js"
+    "start": "node api/index.js",
+    "start:server": "node server.js",
+    "build": "cd frontend && npm ci && npm run build"
   },
   "dependencies": {
     "axios": "^1.7.2",
@@ -15,5 +17,8 @@
     "form-data": "^4.0.0",
     "multer": "^2.0.0-rc.4",
     "openai": "^4.52.7"
+  },
+  "devDependencies": {
+    "remix": "^2.17.1"
   }
 }
