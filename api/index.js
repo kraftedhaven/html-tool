@@ -8,6 +8,7 @@ import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
 import { inventoryStore } from './inventory-store.js';
+import { track } from './analytics.js';
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ const authenticateAdmin = (req, res, next) => {
 
 // Admin login route
 app.post('/api/admin/login', authenticateAdmin, (req, res) => {
+    track('Admin Login Succeeded', { source: 'api' });
     res.json({ success: true, message: 'Admin logged in successfully' });
 });
 
@@ -52,20 +54,21 @@ app.get('/api/admin/inventory', authenticateAdmin, async (req, res) => {
 
 app.post('/api/admin/inventory', authenticateAdmin, async (req, res) => {
     const newItem = await inventoryStore.create({ ...req.body });
+    track('Inventory Created', { id: newItem.id, source: 'api' });
     res.status(201).json(newItem);
 });
 
 app.put('/api/admin/inventory/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     const updated = await inventoryStore.update(id, { ...req.body });
-    if (updated) return res.json(updated);
+    if (updated) { track('Inventory Updated', { id, source: 'api' }); return res.json(updated); }
     return res.status(404).json({ error: 'Item not found' });
 });
 
 app.delete('/api/admin/inventory/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     const removed = await inventoryStore.remove(id);
-    if (removed) return res.status(204).send();
+    if (removed) { track('Inventory Deleted', { id, source: 'api' }); return res.status(204).send(); }
     return res.status(404).json({ error: 'Item not found' });
 });
 
@@ -126,6 +129,7 @@ async function getEbayAccessToken() {
 
 // Analyze Images with OpenAI Vision
 app.post('/api/analyze-images', upload.array('images'), async (req, res, next) => {
+    try { track('Analyze Images Requested', { files: (req.files||[]).length, source: 'api' }); } catch {}
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ error: 'No images uploaded.' });
     }
