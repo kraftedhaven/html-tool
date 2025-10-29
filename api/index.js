@@ -7,6 +7,7 @@ import multer from 'multer';
 import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
+import { inventoryStore } from './inventory-store.js';
 
 dotenv.config();
 
@@ -26,37 +27,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // --- Admin Authentication and Inventory Management ---
 
-// Define the path to the inventory JSON file
-const INVENTORY_FILE = path.join(process.cwd(), 'db', 'inventory.json');
-
-// Helper function to read inventory data from the JSON file
-const readInventory = () => {
-    try {
-        // Check if the file exists, if not, return an empty array
-        if (!fs.existsSync(INVENTORY_FILE)) {
-            const dir = path.dirname(INVENTORY_FILE);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
-            fs.writeFileSync(INVENTORY_FILE, '[]', 'utf8');
-            return [];
-        }
-        const data = fs.readFileSync(INVENTORY_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading inventory file:', error);
-        return [];
-    }
-};
-
-// Helper function to write inventory data to the JSON file
-const writeInventory = (inventory) => {
-    try {
-        fs.writeFileSync(INVENTORY_FILE, JSON.stringify(inventory, null, 2), 'utf8');
-    } catch (error) {
-        console.error('Error writing inventory file:', error);
-    }
-};
+// Inventory storage is now pluggable: Redis if available, else JSON file for local dev
 
 // Simple admin authentication middleware
 const authenticateAdmin = (req, res, next) => {
@@ -74,43 +45,28 @@ app.post('/api/admin/login', authenticateAdmin, (req, res) => {
 });
 
 // Admin Inventory CRUD routes
-app.get('/api/admin/inventory', authenticateAdmin, (req, res) => {
-    const inventory = readInventory();
+app.get('/api/admin/inventory', authenticateAdmin, async (req, res) => {
+    const inventory = await inventoryStore.list();
     res.json(inventory);
 });
 
-app.post('/api/admin/inventory', authenticateAdmin, (req, res) => {
-    const inventory = readInventory();
-    const newItem = { id: Date.now().toString(), ...req.body };
-    inventory.push(newItem);
-    writeInventory(inventory);
+app.post('/api/admin/inventory', authenticateAdmin, async (req, res) => {
+    const newItem = await inventoryStore.create({ ...req.body });
     res.status(201).json(newItem);
 });
 
-app.put('/api/admin/inventory/:id', authenticateAdmin, (req, res) => {
-    const inventory = readInventory();
+app.put('/api/admin/inventory/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
-    const itemIndex = inventory.findIndex(item => item.id === id);
-    if (itemIndex > -1) {
-        inventory[itemIndex] = { ...inventory[itemIndex], ...req.body };
-        writeInventory(inventory);
-        res.json(inventory[itemIndex]);
-    } else {
-        res.status(404).json({ error: 'Item not found' });
-    }
+    const updated = await inventoryStore.update(id, { ...req.body });
+    if (updated) return res.json(updated);
+    return res.status(404).json({ error: 'Item not found' });
 });
 
-app.delete('/api/admin/inventory/:id', authenticateAdmin, (req, res) => {
-    let inventory = readInventory();
+app.delete('/api/admin/inventory/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
-    const initialLength = inventory.length;
-    inventory = inventory.filter(item => item.id !== id);
-    if (inventory.length < initialLength) {
-        writeInventory(inventory);
-        res.status(204).send();
-    } else {
-        res.status(404).json({ error: 'Item not found' });
-    }
+    const removed = await inventoryStore.remove(id);
+    if (removed) return res.status(204).send();
+    return res.status(404).json({ error: 'Item not found' });
 });
 
 // --- eBay API Configuration ---

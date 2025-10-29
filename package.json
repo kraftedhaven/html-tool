@@ -16,7 +16,8 @@
     "express": "^4.19.2",
     "form-data": "^4.0.0",
     "multer": "^2.0.0-rc.4",
-    "openai": "^4.52.7"
+    "openai": "^4.52.7",
+    "redis": "^4.7.0"
   },
   "devDependencies": {
     "remix": "^2.17.1"
