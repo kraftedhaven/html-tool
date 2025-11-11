@@ -36,4 +36,16 @@ Here are some of the technologies I'm proficient in:
 * **LinkedIn:** https://www.linkedin.com/in/korinn-clark-475523221?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app
 * **Email:** kht@hiddenhaventhreads.com
 
+---
+
+### 📚 Project Documentation
+
+For the Neural Listing Engine project:
+* **[Webhook Setup Guide](WEBHOOK_SETUP.md)** - How to find and configure webhook URLs
+* **[Deployment Guide](DEPLOYMENT.md)** - Deployment instructions
+* **[Azure Deployment](AZURE_DEPLOYMENT.md)** - Azure-specific deployment
+* **[Subscription System Setup](azure-functions/docs/subscription-system-setup.md)** - Complete SaaS setup guide
+
+---
+
 [![Netlify Status](https://api.netlify.com/api/v1/badges/1c6a239c-f799-456d-9fc7-7292ded1b7d7/deploy-status)](https://app.netlify.com/projects/soft-donut-9f77a6/deploys)
