@@ -22,6 +22,8 @@
     "noUncheckedSideEffectImports": true,
 
     "types": ["node"]
+  "noUncheckedSideEffectImports": true,
+  "types": ["node"]
   },
   "include": ["vite.config.ts"]
 }

@@ -7,6 +7,11 @@ import multer from 'multer';
 import FormData from 'form-data';
 import fs from 'fs';
 import path from 'path';
+import { inventoryStore } from './inventory-store.js';
+import { track } from './analytics.js';
+import rateLimit from 'express-rate-limit';
+import { validateBody, LoginSchema, InsightsSchema, InventoryCreateSchema, InventoryUpdateSchema } from './validation.js';
+import { cioTrack, cioIdentify, resolveUserId } from './customerio.js';
 
 dotenv.config();
 
@@ -23,40 +28,14 @@ const upload = multer({
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Basic global rate limiting
+const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false });
+app.use(globalLimiter);
+const burstyLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
 
 // --- Admin Authentication and Inventory Management ---
 
-// Define the path to the inventory JSON file
-const INVENTORY_FILE = path.join(process.cwd(), 'db', 'inventory.json');
-
-// Helper function to read inventory data from the JSON file
-const readInventory = () => {
-    try {
-        // Check if the file exists, if not, return an empty array
-        if (!fs.existsSync(INVENTORY_FILE)) {
-            const dir = path.dirname(INVENTORY_FILE);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
-            fs.writeFileSync(INVENTORY_FILE, '[]', 'utf8');
-            return [];
-        }
-        const data = fs.readFileSync(INVENTORY_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading inventory file:', error);
-        return [];
-    }
-};
-
-// Helper function to write inventory data to the JSON file
-const writeInventory = (inventory) => {
-    try {
-        fs.writeFileSync(INVENTORY_FILE, JSON.stringify(inventory, null, 2), 'utf8');
-    } catch (error) {
-        console.error('Error writing inventory file:', error);
-    }
-};
+// Inventory storage is now pluggable: Redis if available, else JSON file for local dev
 
 // Simple admin authentication middleware
 const authenticateAdmin = (req, res, next) => {
@@ -69,48 +48,41 @@ const authenticateAdmin = (req, res, next) => {
 };
 
 // Admin login route
-app.post('/api/admin/login', authenticateAdmin, (req, res) => {
+app.post('/api/admin/login', validateBody(LoginSchema), authenticateAdmin, async (req, res) => {
+    const userId = resolveUserId(req);
+    track('Admin Login Succeeded', { source: 'api' });
+    await cioIdentify(userId, { role: 'admin' });
+    await cioTrack(userId, 'admin_login', { ip: req.ip || '' });
     res.json({ success: true, message: 'Admin logged in successfully' });
 });
 
 // Admin Inventory CRUD routes
-app.get('/api/admin/inventory', authenticateAdmin, (req, res) => {
-    const inventory = readInventory();
+app.get('/api/admin/inventory', authenticateAdmin, async (req, res) => {
+    const inventory = await inventoryStore.list();
     res.json(inventory);
 });
 
-app.post('/api/admin/inventory', authenticateAdmin, (req, res) => {
-    const inventory = readInventory();
-    const newItem = { id: Date.now().toString(), ...req.body };
-    inventory.push(newItem);
-    writeInventory(inventory);
+app.post('/api/admin/inventory', validateBody(InventoryCreateSchema), authenticateAdmin, async (req, res) => {
+    const newItem = await inventoryStore.create({ ...req.validated?.body });
+    const userId = resolveUserId(req);
+    track('Inventory Created', { id: newItem.id, source: 'api' });
+    await cioTrack(userId, 'inventory_created', { id: newItem.id });
     res.status(201).json(newItem);
 });
 
-app.put('/api/admin/inventory/:id', authenticateAdmin, (req, res) => {
-    const inventory = readInventory();
+app.put('/api/admin/inventory/:id', validateBody(InventoryUpdateSchema), authenticateAdmin, async (req, res) => {
     const { id } = req.params;
-    const itemIndex = inventory.findIndex(item => item.id === id);
-    if (itemIndex > -1) {
-        inventory[itemIndex] = { ...inventory[itemIndex], ...req.body };
-        writeInventory(inventory);
-        res.json(inventory[itemIndex]);
-    } else {
-        res.status(404).json({ error: 'Item not found' });
-    }
+    const updated = await inventoryStore.update(id, { ...req.validated?.body });
+    const userId = resolveUserId(req);
+    if (updated) { track('Inventory Updated', { id, source: 'api' }); await cioTrack(userId, 'inventory_updated', { id }); return res.json(updated); }
+    return res.status(404).json({ error: 'Item not found' });
 });
 
-app.delete('/api/admin/inventory/:id', authenticateAdmin, (req, res) => {
-    let inventory = readInventory();
+app.delete('/api/admin/inventory/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
-    const initialLength = inventory.length;
-    inventory = inventory.filter(item => item.id !== id);
-    if (inventory.length < initialLength) {
-        writeInventory(inventory);
-        res.status(204).send();
-    } else {
-        res.status(404).json({ error: 'Item not found' });
-    }
+    const removed = await inventoryStore.remove(id);
+    if (removed) { const userId = resolveUserId(req); track('Inventory Deleted', { id, source: 'api' }); await cioTrack(userId, 'inventory_deleted', { id }); return res.status(204).send(); }
+    return res.status(404).json({ error: 'Item not found' });
 });
 
 // --- eBay API Configuration ---
@@ -169,7 +141,8 @@ async function getEbayAccessToken() {
 // --- API Endpoints ---
 
 // Analyze Images with OpenAI Vision
-app.post('/api/analyze-images', upload.array('images'), async (req, res, next) => {
+app.post('/api/analyze-images', burstyLimiter, upload.array('images'), async (req, res, next) => {
+    try { track('Analyze Images Requested', { files: (req.files||[]).length, source: 'api' }); } catch {}
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ error: 'No images uploaded.' });
     }
@@ -376,8 +349,8 @@ app.post('/api/ebay/str', async (req, res) => {
 });
 
 // Insights bot for the HTML tool
-app.post('/api/insights', async (req, res, next) => {
-    const { title, description, categoryName } = req.body;
+app.post('/api/insights', validateBody(InsightsSchema), async (req, res, next) => {
+    const { title, description, categoryName } = req.validated?.body || req.body;
 
     if (!title) {
         return res.status(400).json({ error: 'A "title" is required to get insights.' });
@@ -401,6 +374,11 @@ app.post('/api/insights', async (req, res, next) => {
         });
 
         const insights = completion.choices[0].message.content;
+        try {
+            const userId = resolveUserId(req);
+            track('Insights Requested', { source: 'api' });
+            await cioTrack(userId, 'insights_requested', { hasDescription: !!description, hasCategory: !!categoryName });
+        } catch {}
         res.json({ success: true, insights });
     } catch (error) {
         next(error);

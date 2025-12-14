@@ -1,23 +1,26 @@
 {
-    "functions": {
-        "api/index.js": {
-            "maxDuration": 60
-        }
-    },
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/api/index.js"
-        }
-    ],
-    "headers": [
-        {
-            "source": "/(.*)",
-            "headers": [
-                { "key": "X-Content-Type-Options", "value": "nosniff" },
-                { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-                { "key": "X-XSS-Protection", "value": "1; mode=block" }
-            ]
-        }
-    ]
+  "builds": [
+    { "src": "api/index.js", "use": "@vercel/node" },
+    { "src": "frontend/package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/(.*)", "dest": "/frontend/dist/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    }
+  ]
 }
