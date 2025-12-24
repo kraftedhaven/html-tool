@@ -67,9 +67,9 @@ const ServiceRequestProcessor: React.FC<ServiceRequestProcessorProps> = ({ servi
     setIsLoading(false);
   };
 
-  const handleListingChange = (index: number, field: string, value: unknown) => {
+  const handleListingChange = (index: number, field: keyof Listing, value: string | number) => {
     const newListings = [...listings];
-    newListings[index][field] = value;
+    newListings[index] = { ...newListings[index], [field]: value };
     setListings(newListings);
   };
 
@@ -159,7 +159,11 @@ const handlePublish = async () => {
             <div key={index} className="listing-editor">
               <input value={listing.seoTitle || ''} onChange={e => handleListingChange(index, 'seoTitle', e.target.value)} />
               <textarea value={String(listing.keyFeatures || '')} onChange={e => handleListingChange(index, 'keyFeatures', e.target.value)} />
-              <input value={listing.suggestedPrice || ''} onChange={e => handleListingChange(index, 'suggestedPrice', e.target.value)} />
+              <input 
+                type="number" 
+                value={listing.suggestedPrice || ''} 
+                onChange={e => handleListingChange(index, 'suggestedPrice', parseFloat(e.target.value) || 0)} 
+              />
             </div>
           ))}
           <button onClick={handlePublish} disabled={isLoading}>
