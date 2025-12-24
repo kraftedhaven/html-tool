@@ -3,59 +3,9 @@
  * Manages user authentication, subscription status, and usage tracking
  */
 
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useState, useEffect, type ReactNode } from 'react';
 import { config } from '../config/environment';
-
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  createdAt: string;
-}
-
-interface Subscription {
-  id: string;
-  plan: 'basic' | 'pro' | 'enterprise';
-  status: 'active' | 'cancelled' | 'past_due' | 'unpaid' | 'trialing';
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
-  planDetails: {
-    id: string;
-    name: string;
-    price: number;
-    features: {
-      monthlyListingLimit: number;
-      aiAnalysisLimit: number;
-      marketplaceCount: number;
-      bulkUploadEnabled: boolean;
-      advancedAnalyticsEnabled: boolean;
-      prioritySupport: boolean;
-    };
-  };
-}
-
-interface Usage {
-  listings: {
-    used: number;
-    limit: number;
-    percentage: number;
-    unlimited: boolean;
-  };
-  aiAnalyses: {
-    used: number;
-    limit: number;
-    percentage: number;
-    unlimited: boolean;
-  };
-  apiCalls: {
-    used: number;
-    limit: number;
-    percentage: number;
-    unlimited: boolean;
-  };
-}
+import type { User, Subscription, Usage } from '../types/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -75,15 +25,8 @@ interface AuthContextType {
   createBillingPortal: () => Promise<string | null>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -108,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } else {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -323,3 +267,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+// Re-export useAuth hook for backward compatibility
+// eslint-disable-next-line react-refresh/only-export-components
+export { useAuth } from '../hooks/useAuth';

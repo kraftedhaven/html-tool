@@ -94,7 +94,7 @@ export function Dashboard() {
         <div id="tabpanel-overview" role="tabpanel" aria-labelledby="tab-overview" hidden={activeTab !== 'overview'}>
           <div className="overview-tab">
             <div className="dashboard-grid">
-              {/* @ts-ignore */}
+              {/* @ts-expect-error SubscriptionCard props may need type adjustment */}
               <SubscriptionCard subscription={subscription} />
               
               {usage && (
@@ -170,7 +170,6 @@ export function Dashboard() {
         <div id="tabpanel-usage" role="tabpanel" aria-labelledby="tab-usage" hidden={activeTab !== 'usage'}>
           <div className="usage-tab">
             <h2>Usage Analytics</h2>
-            {/* @ts-ignore */}
             {usage && <UsageChart usage={usage} />}
           </div>
         </div>
@@ -178,7 +177,7 @@ export function Dashboard() {
         <div id="tabpanel-billing" role="tabpanel" aria-labelledby="tab-billing" hidden={activeTab !== 'billing'}>
           <div className="billing-tab">
             <h2>Billing & Plans</h2>
-            {/* @ts-ignore */}
+            {/* @ts-expect-error PlanUpgrade props may need type adjustment */}
             <PlanUpgrade currentSubscription={subscription} />
           </div>
         </div>

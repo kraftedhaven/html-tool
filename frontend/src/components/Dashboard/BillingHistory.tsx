@@ -26,6 +26,7 @@ export const BillingHistory: React.FC = () => {
 
   useEffect(() => {
     fetchBillingHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchBillingHistory = async () => {

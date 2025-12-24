@@ -77,6 +77,7 @@ export const PlanUpgrade: React.FC<PlanUpgradeProps> = ({ currentSubscription })
         alert('Failed to update plan. Please try again.');
       }
     } catch (error) {
+      console.error('Failed to update plan:', error);
       alert('Failed to update plan. Please try again.');
     } finally {
       setIsLoading(false);
@@ -98,6 +99,7 @@ export const PlanUpgrade: React.FC<PlanUpgradeProps> = ({ currentSubscription })
         alert('Failed to cancel subscription. Please try again.');
       }
     } catch (error) {
+      console.error('Failed to cancel subscription:', error);
       alert('Failed to cancel subscription. Please try again.');
     } finally {
       setIsLoading(false);

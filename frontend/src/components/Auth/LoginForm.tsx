@@ -33,6 +33,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSucc
         setError('Invalid email or password');
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError('Login failed. Please try again.');
     } finally {
       setIsLoading(false);

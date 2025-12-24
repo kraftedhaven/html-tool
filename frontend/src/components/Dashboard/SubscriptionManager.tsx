@@ -10,10 +10,11 @@ import { PlanUpgrade } from './PlanUpgrade';
 import { BillingHistory } from './BillingHistory';
 import { PaymentMethods } from './PaymentMethods';
 import { UsageChart } from './UsageChart';
+import type { Subscription, Usage } from '../../types/auth';
 
 interface SubscriptionManagerProps {
-  subscription: any;
-  usage: any;
+  subscription: Subscription;
+  usage: Usage;
 }
 
 export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
@@ -35,6 +36,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
           alert('Failed to upgrade plan. Please try again.');
         }
       } catch (error) {
+        console.error('Failed to upgrade plan:', error);
         alert('Failed to upgrade plan. Please try again.');
       } finally {
         setIsLoading(false);

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import type { ServiceRequest, ServiceRequestImage, Listing } from '../../types/serviceRequest';
 
 interface ServiceRequestProcessorProps {
   serviceRequestId: string;
@@ -10,10 +11,10 @@ interface ServiceRequestProcessorProps {
 
 const ServiceRequestProcessor: React.FC<ServiceRequestProcessorProps> = ({ serviceRequestId, onBack }) => {
   const { token } = useAuth();
-  const [serviceRequest, setServiceRequest] = useState<any>(null);
+  const [serviceRequest, setServiceRequest] = useState<ServiceRequest | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [listings, setListings] = useState<any[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
 
   useEffect(() => {
     const fetchServiceRequest = async () => {
@@ -23,8 +24,8 @@ const ServiceRequestProcessor: React.FC<ServiceRequestProcessorProps> = ({ servi
           headers: { Authorization: `Bearer ${token}` }
         });
         setServiceRequest(response.data.serviceRequest);
-      } catch (err: any) {
-        const errorMessage = err?.response?.data?.error || err?.message || 'Failed to fetch service request.';
+      } catch (err) {
+        const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as Error)?.message || 'Failed to fetch service request.';
         setError(errorMessage);
       }
       setIsLoading(false);
@@ -36,12 +37,12 @@ const ServiceRequestProcessor: React.FC<ServiceRequestProcessorProps> = ({ servi
   }, [token, serviceRequestId]);
 
   const handleGenerateListings = async () => {
-    if (!serviceRequest) return;
+    if (!serviceRequest || !serviceRequest.images) return;
 
     setIsLoading(true);
     try {
       const formData = new FormData();
-      serviceRequest.images.forEach((image: any) => {
+      serviceRequest.images.forEach((image: ServiceRequestImage) => {
         const byteCharacters = atob(image.data);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
@@ -59,20 +60,25 @@ const ServiceRequestProcessor: React.FC<ServiceRequestProcessorProps> = ({ servi
         }
       });
       setListings(response.data.data);
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to generate listings.';
+    } catch (err) {
+      const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as Error)?.message || 'Failed to generate listings.';
       setError(errorMessage);
     }
     setIsLoading(false);
   };
 
-  const handleListingChange = (index: number, field: string, value: any) => {
+  const handleListingChange = (index: number, field: string, value: unknown) => {
     const newListings = [...listings];
     newListings[index][field] = value;
     setListings(newListings);
   };
 
 const handlePublish = async () => {
+    if (!serviceRequest) {
+      setError('Service request not found.');
+      return;
+    }
+
     for (const listing of listings) {
       if (!listing.seoTitle || !listing.suggestedPrice) {
         setError('All listings must have a title and a price.');
@@ -82,7 +88,7 @@ const handlePublish = async () => {
 
     setIsLoading(true);
     try {
-      for (const marketplace of serviceRequest.serviceDetails.marketplaces) {
+      for (const marketplace of serviceRequest.serviceDetails?.marketplaces || []) {
         if (marketplace === 'ebay') {
           await axios.post('/api/bulkUploadEbay', { listings }, {
             headers: { Authorization: `Bearer ${token}` }
@@ -103,8 +109,8 @@ const handlePublish = async () => {
         }
       }
       alert('Listings published successfully!');
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to publish listings.';
+    } catch (err) {
+      const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as Error)?.message || 'Failed to publish listings.';
       setError(errorMessage);
     }
     setIsLoading(false);
@@ -130,13 +136,13 @@ const handlePublish = async () => {
         <h3>Service Details</h3>
         <p><strong>User:</strong> {serviceRequest.userId}</p>
         <p><strong>Status:</strong> {serviceRequest.status}</p>
-        <p><strong>Items:</strong> {serviceRequest.serviceDetails.itemCount}</p>
-        <p><strong>Marketplaces:</strong> {serviceRequest.serviceDetails.marketplaces.join(', ')}</p>
+        <p><strong>Items:</strong> {serviceRequest.serviceDetails?.itemCount}</p>
+        <p><strong>Marketplaces:</strong> {serviceRequest.serviceDetails?.marketplaces.join(', ')}</p>
       </div>
       <div>
         <h3>Images</h3>
         <div className="image-gallery">
-          {serviceRequest.images.map((image: any) => (
+          {serviceRequest.images?.map((image: ServiceRequestImage) => (
             <img key={image.id} src={`data:${image.mimeType};base64,${image.data}`} alt={image.originalName} />
           ))}
         </div>
@@ -151,9 +157,9 @@ const handlePublish = async () => {
           <h3>Generated Listings</h3>
           {listings.map((listing, index) => (
             <div key={index} className="listing-editor">
-              <input value={listing.seoTitle} onChange={e => handleListingChange(index, 'seoTitle', e.target.value)} />
-              <textarea value={listing.keyFeatures} onChange={e => handleListingChange(index, 'keyFeatures', e.target.value)} />
-              <input value={listing.suggestedPrice} onChange={e => handleListingChange(index, 'suggestedPrice', e.target.value)} />
+              <input value={listing.seoTitle || ''} onChange={e => handleListingChange(index, 'seoTitle', e.target.value)} />
+              <textarea value={String(listing.keyFeatures || '')} onChange={e => handleListingChange(index, 'keyFeatures', e.target.value)} />
+              <input value={listing.suggestedPrice || ''} onChange={e => handleListingChange(index, 'suggestedPrice', e.target.value)} />
             </div>
           ))}
           <button onClick={handlePublish} disabled={isLoading}>
