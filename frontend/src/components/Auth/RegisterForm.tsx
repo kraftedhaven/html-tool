@@ -99,6 +99,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onS
         setError('Registration failed. Please try again.');
       }
     } catch (error) {
+      console.error('Registration error:', error);
       setError('Registration failed. Please try again.');
     } finally {
       setIsLoading(false);

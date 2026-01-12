@@ -159,7 +159,7 @@ export const Dashboard: React.FC = () => {
         {activeTab === 'billing' && (
           <div className="billing-tab">
             <h2>Subscription Management</h2>
-            <SubscriptionManager subscription={subscription} usage={usage} />
+            {usage && <SubscriptionManager subscription={subscription} usage={usage} />}
           </div>
         )}
 

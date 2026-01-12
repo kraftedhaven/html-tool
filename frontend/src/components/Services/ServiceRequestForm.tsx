@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
+import type { Pricing } from '../../types/pricing';
 
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -66,7 +67,7 @@ const ServiceRequestForm: React.FC = () => {
   const [rushOrder, setRushOrder] = useState(false);
   const [additionalServices, setAdditionalServices] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
-  const [pricing, setPricing] = useState<any>(null);
+  const [pricing, setPricing] = useState<Pricing | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,8 +109,8 @@ const ServiceRequestForm: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPricing(response.data.pricing);
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to calculate pricing.';
+    } catch (err) {
+      const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as Error)?.message || 'Failed to calculate pricing.';
       setError(errorMessage);
     }
   };
@@ -142,8 +143,8 @@ const ServiceRequestForm: React.FC = () => {
       });
       setSuccess('Service request submitted successfully! Please complete payment.');
       setClientSecret(response.data.paymentIntent.clientSecret);
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to submit service request.';
+    } catch (err) {
+      const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as Error)?.message || 'Failed to submit service request.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -199,9 +200,9 @@ const ServiceRequestForm: React.FC = () => {
           {pricing && (
             <div className="pricing-details">
               <h3>Estimated Price:</h3>
-              <p>Subtotal: ${pricing.subtotal}</p>
-              <p>Tax: ${pricing.tax}</p>
-              <p>Total: ${pricing.total}</p>
+              <p>Subtotal: ${pricing.subtotal ?? 0}</p>
+              <p>Tax: ${pricing.tax ?? 0}</p>
+              <p>Total: ${pricing.total ?? 0}</p>
             </div>
           )}
 

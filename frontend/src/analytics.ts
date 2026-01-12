@@ -18,9 +18,13 @@ export function initAnalytics() {
     // First view
     trackPage()
     // Expose a safe global helper
-    ;(window as any).trackEvent = (name: string, props?: Record<string, any>) => {
-      try { mixpanel.track(name, { source: 'frontend', ...(props || {}) }) } catch {}
+    ;(window as { trackEvent?: (name: string, props?: Record<string, unknown>) => void }).trackEvent = (name: string, props?: Record<string, unknown>) => {
+      try { mixpanel.track(name, { source: 'frontend', ...(props || {}) }) } catch (err) {
+        console.error('Failed to track event:', err);
+      }
     }
-  } catch {}
+  } catch (err) {
+    console.error('Failed to initialize analytics:', err);
+  }
 }
 

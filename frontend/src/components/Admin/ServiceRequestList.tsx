@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import type { ServiceRequest } from '../../types/serviceRequest';
 
 import ServiceRequestProcessor from './ServiceRequestProcessor';
 
 const ServiceRequestList: React.FC = () => {
   const { token } = useAuth();
-  const [serviceRequests, setServiceRequests] = useState<any[]>([]);
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
@@ -20,8 +21,8 @@ const ServiceRequestList: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setServiceRequests(response.data.serviceRequests);
-      } catch (err: any) {
-        const errorMessage = err?.response?.data?.error || err?.message || 'Failed to fetch service requests.';
+      } catch (err) {
+        const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as Error)?.message || 'Failed to fetch service requests.';
         setError(errorMessage);
       }
       setIsLoading(false);
@@ -66,9 +67,9 @@ const ServiceRequestList: React.FC = () => {
               <td>{req.id}</td>
               <td>{req.userId}</td>
               <td>{req.status}</td>
-              <td>{req.serviceDetails.itemCount}</td>
-              <td>{req.serviceDetails.marketplaces.join(', ')}</td>
-              <td>${req.serviceDetails.pricing.total}</td>
+              <td>{req.serviceDetails?.itemCount ?? 'N/A'}</td>
+              <td>{req.serviceDetails?.marketplaces.join(', ') ?? 'N/A'}</td>
+              <td>${req.serviceDetails?.pricing?.total ?? 0}</td>
               <td>{new Date(req.createdAt).toLocaleString()}</td>
               <td>
                 <button onClick={() => setSelectedRequestId(req.id)}>Process</button>
