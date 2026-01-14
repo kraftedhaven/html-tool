@@ -86,7 +86,35 @@ Configure these in your Azure Functions App Settings:
 - `EBAY_CERT_ID`: eBay certificate ID
 - `EBAY_DEV_ID`: eBay developer ID
 - `STRIPE_SECRET_KEY`: Stripe secret key
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook signing secret (whsec_...)
 - Additional secrets as needed
+
+## Webhook Configuration
+
+### Finding Your Webhook URL
+
+After deploying your Azure Function App, you'll need to configure webhooks in Stripe. Your webhook URL will be:
+
+```
+https://YOUR-FUNCTION-APP-NAME.azurewebsites.net/api/webhooks/stripe
+```
+
+**To find your Function App name:**
+1. Go to [Azure Portal](https://portal.azure.com)
+2. Navigate to "Function App"
+3. Find your function app in the list
+4. The name is shown in the "Overview" section
+5. Your webhook URL will be: `https://[NAME].azurewebsites.net/api/webhooks/stripe`
+
+**To configure in Stripe:**
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com/) → Developers → Webhooks
+2. Click "Add endpoint"
+3. Enter your webhook URL
+4. Select events: `customer.subscription.*`, `invoice.payment_succeeded`, `invoice.payment_failed`
+5. Save and copy the signing secret (starts with `whsec_...`)
+6. Add the signing secret to your Azure Function App settings as `STRIPE_WEBHOOK_SECRET`
+
+For detailed webhook setup instructions, see [Subscription System Setup Guide](azure-functions/docs/subscription-system-setup.md).
 
 ## Troubleshooting
 

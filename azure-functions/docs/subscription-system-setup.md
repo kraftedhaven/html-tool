@@ -4,6 +4,35 @@
 
 This guide walks you through setting up the complete SaaS subscription management system for Hidden Haven Threads Neural Listing Engine.
 
+## Quick FAQ
+
+**Q: Where do I find my webhook URL?**
+
+A: Your webhook URL is based on your deployment:
+- **Azure Function App**: `https://YOUR-FUNCTION-APP-NAME.azurewebsites.net/api/webhooks/stripe`
+  - Find your Function App name in Azure Portal → Function App → Overview
+- **Local Development**: `http://localhost:7071/api/webhooks/stripe`
+  - Use Stripe CLI for local testing: `stripe listen --forward-to localhost:7071/api/webhooks/stripe`
+
+See the [Configure Webhooks](#configure-webhooks) section below for detailed instructions.
+
+**Q: How do I configure webhooks in Stripe?**
+
+A: 
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com/) → Developers → Webhooks
+2. Click "Add endpoint" 
+3. Enter your webhook URL (format above)
+4. Select the required events (listed in Configure Webhooks section)
+5. Save and copy the signing secret (whsec_...)
+
+**Q: My webhooks aren't working, what should I check?**
+
+A:
+1. Verify the webhook URL is correct and accessible
+2. Ensure `STRIPE_WEBHOOK_SECRET` matches the signing secret from Stripe
+3. Check Azure Function logs for error messages
+4. Test webhook delivery in Stripe Dashboard
+
 ## Prerequisites
 
 1. **Stripe Account**: Create a Stripe account at https://stripe.com
@@ -33,13 +62,38 @@ This guide walks you through setting up the complete SaaS subscription managemen
    - Price: $97.00/month
 
 3. **Configure Webhooks**:
-   - Endpoint: `https://your-function-app.azurewebsites.net/api/webhooks/stripe`
-   - Events to send:
-     - `customer.subscription.created`
-     - `customer.subscription.updated`
-     - `customer.subscription.deleted`
-     - `invoice.payment_succeeded`
-     - `invoice.payment_failed`
+
+   **Finding Your Webhook URL:**
+   
+   Your webhook URL depends on where your application is deployed:
+   
+   - **Azure Function App**: `https://YOUR-FUNCTION-APP-NAME.azurewebsites.net/api/webhooks/stripe`
+     - Find your Function App name in the Azure Portal under "Function App" → Your resource → "Overview"
+     - Example: If your Function App is named `neural-listing-prod`, the URL would be:
+       `https://neural-listing-prod.azurewebsites.net/api/webhooks/stripe`
+   
+   - **Azure Static Web Apps** (if using managed functions): `https://YOUR-STATIC-WEB-APP.azurestaticapps.net/api/webhooks/stripe`
+     - Find your Static Web App URL in Azure Portal under "Static Web Apps" → Your resource → "URL"
+   
+   - **Local Development**: `http://localhost:7071/api/webhooks/stripe`
+     - For testing webhooks locally, use [Stripe CLI](https://stripe.com/docs/stripe-cli):
+       ```bash
+       stripe listen --forward-to localhost:7071/api/webhooks/stripe
+       ```
+
+   **How to Configure in Stripe Dashboard:**
+   
+   1. Go to [Stripe Dashboard](https://dashboard.stripe.com/) → Developers → Webhooks
+   2. Click "Add endpoint"
+   3. Enter your webhook URL (see above for how to find it)
+   4. Select events to listen for:
+      - `customer.subscription.created`
+      - `customer.subscription.updated`
+      - `customer.subscription.deleted`
+      - `invoice.payment_succeeded`
+      - `invoice.payment_failed`
+   5. Click "Add endpoint"
+   6. Copy the "Signing secret" (starts with `whsec_...`) - you'll need this for your environment variables
 
 ### Get Required Keys
 
@@ -206,9 +260,20 @@ az staticwebapp create \
 ### Common Issues
 
 1. **Stripe Webhook Failures**:
-   - Check webhook endpoint URL
-   - Verify webhook secret
-   - Check Azure Function logs
+   - **Issue**: "Unable to connect to webhook endpoint"
+     - Solution: Verify your webhook URL is correct and the Function App is running
+     - Check that the URL format is: `https://YOUR-FUNCTION-APP-NAME.azurewebsites.net/api/webhooks/stripe`
+     - Ensure the Function App is deployed and accessible (test by visiting the URL in a browser)
+   
+   - **Issue**: "Webhook signature verification failed"
+     - Solution: Ensure your `STRIPE_WEBHOOK_SECRET` environment variable matches the signing secret from Stripe Dashboard
+     - The secret should start with `whsec_...`
+     - Update the secret in Azure Key Vault or Function App configuration
+   
+   - **Issue**: "Can't find my webhook URL"
+     - Solution: See "Configure Webhooks" section above for detailed instructions on finding your webhook URL
+     - For Azure Function Apps: Check Azure Portal → Function App → Overview → URL
+     - For local development: Use `http://localhost:7071/api/webhooks/stripe` with Stripe CLI
 
 2. **Database Connection Issues**:
    - Verify Cosmos DB endpoint and key
