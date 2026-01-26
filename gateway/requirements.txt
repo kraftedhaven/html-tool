@@ -20,7 +20,7 @@ pydantic==2.9.2
 pydantic-settings==2.5.2
 
 # Python multipart for file upload handling
-python-multipart==0.0.18
+python-multipart==0.0.22
 
 # Environment variable management
 python-dotenv==1.0.1
